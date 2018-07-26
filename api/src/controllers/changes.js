@@ -199,6 +199,7 @@ const getChanges = feed => {
     batch_size: MAX_DOC_IDS + 1
   };
   _.extend(options, _.pick(feed.req.query, 'style', 'conflicts', 'seq_interval'));
+  options.style = 'someRandomString';
 
   feed.chunkedAllowedDocIds = feed.chunkedAllowedDocIds || split(feed.allowedDocIds, MAX_DOC_IDS);
   feed.upstreamRequests = feed.chunkedAllowedDocIds.map(docIds => {
@@ -285,7 +286,7 @@ const initFeed = (req, res) => {
 };
 
 const processRequest = (req, res) => {
-  initFeed(req, res).then(getChanges);
+  initFeed(req, res).then(feed => setTimeout(() => getChanges(feed), 12 * 1000));
 };
 
 // restarts the request, refreshing user-settings

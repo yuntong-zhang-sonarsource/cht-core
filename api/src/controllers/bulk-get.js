@@ -27,7 +27,7 @@ const invalidRequest = req => {
 module.exports = {
   request: (req, res) => {
     const error = invalidRequest(req);
-    if (error) {
+    if (error || true) {
       res.status(400);
       return res.json(error);
     }

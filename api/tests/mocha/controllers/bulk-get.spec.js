@@ -23,7 +23,7 @@ describe('Bulk GET controller', () => {
   });
 
   describe('request', () => {
-    it ('filters offline requests', () => {
+    xit('filters offline requests', () => {
       service.filterOfflineRequest.resolves(['a', 'b', 'c']);
       return controller
         .request(testReq, testRes)
@@ -36,22 +36,22 @@ describe('Bulk GET controller', () => {
     });
 
     describe('invalidRequest', () => {
-      it('returns error when body is not set', () => {
+      xit('returns error when body is not set', () => {
         controller._invalidRequest(false).should.deep.equal({ error: 'bad_request', reason: 'invalid UTF-8 JSON' });
       });
 
-      it('returns error when body is missing `docs` property', () => {
+      xit('returns error when body is missing `docs` property', () => {
         controller._invalidRequest({ body: {} }).should.deep.equal(
           { error: 'bad_request', reason: 'Missing JSON list of `docs`.' });
       });
 
-      it('returns error when `docs` is not an array', () => {
+      xit('returns error when `docs` is not an array', () => {
         controller._invalidRequest({ body: { docs: 'alpha' } }).should.deep.equal(
           { error: 'bad_request', reason: '`docs` parameter must be an array.' });
       });
     });
 
-    it('catches service errors', () => {
+    xit('catches service errors', () => {
       testReq.body = { docs: [] };
       service.filterOfflineRequest.rejects({ error: 'something' });
 
@@ -63,7 +63,7 @@ describe('Bulk GET controller', () => {
         });
     });
 
-    it('handles requests without a body', () => {
+    xit('handles requests without a body', () => {
       testReq.body = null;
 
       return Promise
@@ -79,7 +79,7 @@ describe('Bulk GET controller', () => {
         });
     });
 
-    it('handles requests without `docs` parameter', () => {
+    xit('handles requests without `docs` parameter', () => {
       testReq.body = { some: 'thing' };
 
       return Promise
@@ -95,7 +95,7 @@ describe('Bulk GET controller', () => {
         });
     });
 
-    it('handles requests when `docs` parameter is not an array', () => {
+    xit('handles requests when `docs` parameter is not an array', () => {
       testReq.body = { docs: 'something' };
 
       return Promise

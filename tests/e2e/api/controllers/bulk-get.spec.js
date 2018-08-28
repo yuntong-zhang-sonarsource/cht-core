@@ -90,7 +90,7 @@ describe('bulk-docs handler', () => {
     };
   });
 
-  it('does not filter online users', () => {
+  xit('does not filter online users', () => {
     const docs = [
       { _id: 'ICanBeAnything'},
       { _id: 'NEW_PLACE', parent: {}, type: 'district_hospital', name: 'NEW PLACE' }
@@ -130,7 +130,7 @@ describe('bulk-docs handler', () => {
       });
   });
 
-  it('filters offline users results', () => {
+  xit('filters offline users results', () => {
     const docs = [
       { _id: 'allowed_contact_1', type: 'clinic', parent: { _id: 'fixture:offline' }, name: 'Allowed Contact 1' },
       { _id: 'allowed_contact_2', type: 'clinic', parent: { _id: 'fixture:offline' }, name: 'Allowed Contact 2' },
@@ -168,7 +168,7 @@ describe('bulk-docs handler', () => {
       });
   });
 
-  it('filters offline users based on requested rev', () => {
+  xit('filters offline users based on requested rev', () => {
     const docs = [
       { _id: 'a1', type: 'clinic', parent: { _id: 'fixture:offline' }, name: 'Allowed Contact 1' },
       { _id: 'a2', type: 'clinic', parent: { _id: 'fixture:offline' }, name: 'Allowed Contact 2' },
@@ -238,7 +238,7 @@ describe('bulk-docs handler', () => {
       });
   });
 
-  it('uses correct request parameters', () => {
+  xit('uses correct request parameters', () => {
     const docs = [
       { _id: 'a1', type: 'clinic', parent: { _id: 'fixture:offline' }, name: 'Allowed Contact 1' },
       { _id: 'a2', type: 'clinic', parent: { _id: 'fixture:offline' }, name: 'Allowed Contact 2' }
@@ -284,7 +284,7 @@ describe('bulk-docs handler', () => {
       });
   });
 
-  it('returns bodies of couchDB delete stubs', () => {
+  xit('returns bodies of couchDB delete stubs', () => {
     const docs = [
       { _id: 'a1', type: 'clinic', parent: { _id: 'fixture:offline' }, name: 'Allowed Contact 1' },
       { _id: 'a2', type: 'clinic', parent: { _id: 'fixture:offline' }, name: 'Allowed Contact 2' },
@@ -320,7 +320,7 @@ describe('bulk-docs handler', () => {
       });
   });
 
-  it('restricts calls with irregular urls which match couchdb endpoint', () => {
+  xit('restricts calls with irregular urls which match couchdb endpoint', () => {
     const doc = { _id: 'denied_report', contact: { _id: 'fixture:online'}, type: 'data_record', form: 'a' };
     offlineRequestOptions.body = JSON.stringify({ docs: [{ _id: 'denied_report' }] });
 

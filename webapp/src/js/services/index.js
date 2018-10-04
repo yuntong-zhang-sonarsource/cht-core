@@ -21,6 +21,7 @@
   require('./contact-summary');
   require('./contact-view-model-generator');
   require('./contacts');
+  require('./contacts-muting');
   require('./count-messages');
   require('./db');
   require('./db-sync');

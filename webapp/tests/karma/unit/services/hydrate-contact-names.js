@@ -3,14 +3,17 @@ describe('HydrateContactNames service', () => {
   'use strict';
 
   let service,
-      GetSummaries;
+      GetSummaries,
+      ContactsMuting;
 
   beforeEach(() => {
     GetSummaries = sinon.stub();
+    ContactsMuting = { loadMutedContactsIds: sinon.stub(), isMutedSync: sinon.stub() };
     module('inboxApp');
     module($provide => {
       $provide.value('$q', Q); // bypass $q so we don't have to digest
       $provide.value('GetSummaries', GetSummaries);
+      $provide.value('ContactsMuting', ContactsMuting);
     });
     inject($injector => service = $injector.get('HydrateContactNames'));
   });

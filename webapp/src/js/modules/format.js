@@ -49,6 +49,9 @@ var _ = require('underscore');
     if (options.name) {
       parts.push('<span class="name">' + _.escape(options.name) + '</span>');
     }
+    if (options.muted) {
+      parts.push('<span>' + _.escape(options.muted) + '</span>');
+    }
     if (options.phone) {
       parts.push('<span>' + _.escape(options.phone) + '</span>');
     }

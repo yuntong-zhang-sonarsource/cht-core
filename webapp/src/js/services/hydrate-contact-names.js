@@ -3,6 +3,7 @@ var _ = require('underscore');
 angular.module('inboxServices').factory('HydrateContactNames',
   function(
     $q,
+    ContactsMuting,
     GetSummaries
   ) {
 
@@ -14,15 +15,25 @@ angular.module('inboxServices').factory('HydrateContactNames',
       return (cs && cs.name) || null;
     };
 
+    var findContact = function(contactSummaries, id) {
+      return _.findWhere(contactSummaries, { _id: id }) || { _id: id };
+    };
+
     var replaceContactIdsWithNames = function(summaries, contactSummaries) {
       summaries.forEach(function(summary) {
         if (summary.contact) {
           summary.contact = findContactName(contactSummaries, summary.contact);
         }
         if (summary.lineage && summary.lineage.length) {
-          summary.lineage = summary.lineage.map(function(id) {
-            return findContactName(contactSummaries, id);
+          var lineage = summary.lineage.map(function (id) {
+            return findContact(contactSummaries, id);
           });
+
+          summary.lineage = lineage.map(function(contactSummary) {
+            return contactSummary && contactSummary.name || null;
+          });
+
+          summary.muted = ContactsMuting.isMutedSync(summary, lineage);
         }
       });
       return summaries;
@@ -48,9 +59,12 @@ angular.module('inboxServices').factory('HydrateContactNames',
         return $q.resolve(summaries);
       }
 
-      return GetSummaries(ids)
-        .then(function(response) {
-          return replaceContactIdsWithNames(summaries, response);
+      return $q
+        .all([
+          GetSummaries(ids),
+          ContactsMuting.loadMutedContactsIds()
+        ]).then(function(response) {
+          return replaceContactIdsWithNames(summaries, response[0]);
         });
     };
   }

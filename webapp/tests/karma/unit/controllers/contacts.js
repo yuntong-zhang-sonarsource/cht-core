@@ -31,7 +31,8 @@ describe('Contacts controller', () => {
     auth,
     deadListContains,
     deadList,
-    contactSummary;
+    contactSummary,
+    contactsMuting;
 
   beforeEach(module('inboxApp'));
 
@@ -125,6 +126,8 @@ describe('Contacts controller', () => {
     contactSummary = sinon.stub();
     contactSummary.returns(Promise.resolve({ context: {} }));
 
+    contactsMuting = { isUnmuteForm: sinon.stub(), isMutedContactsChange: sinon.stub() };
+
     settings = sinon.stub().resolves({});
     auth = sinon.stub().rejects();
 
@@ -144,6 +147,7 @@ describe('Contacts controller', () => {
         Changes: changes,
         ContactSchema: contactSchema,
         ContactSummary: contactSummary,
+        ContactsMuting: contactsMuting,
         Export: () => {},
         GetDataRecords: getDataRecords,
         LiveList: {

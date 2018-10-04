@@ -16,7 +16,8 @@ describe('ContactViewModelGenerator service', () => {
       dbQuery,
       dbAllDocs,
       doc,
-      search;
+      search,
+      contactsMuting;
 
   const childPlacePluralLabel = 'mushroompodes',
         childPlaceIcon = 'fa-mushroom';
@@ -68,12 +69,14 @@ describe('ContactViewModelGenerator service', () => {
         icon: childPlaceIcon
       });
       lineageModelGenerator = { contact: sinon.stub() };
+      contactsMuting = { isMuted: sinon.stub().resolves() };
 
       $provide.factory('DB', KarmaUtils.mockDB({ get: dbGet, query: dbQuery, allDocs: dbAllDocs }));
       $provide.value('Search', search);
       $provide.value('ContactSchema', contactSchema);
       $provide.value('$q', Q); // bypass $q so we don't have to digest
       $provide.value('LineageModelGenerator', lineageModelGenerator);
+      $provide.value('ContactsMuting', contactsMuting);
 
       const parentId = 'districtsdistrict';
       const contactId = 'mario';

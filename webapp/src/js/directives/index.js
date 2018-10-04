@@ -10,6 +10,7 @@
   require('./modal');
   require('./report-image');
   require('./sender');
+  require('./show-muted-modal');
   require('./enter');
 
 }());

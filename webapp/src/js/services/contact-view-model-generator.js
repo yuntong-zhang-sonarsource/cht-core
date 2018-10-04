@@ -19,6 +19,7 @@ angular.module('inboxServices').factory('ContactViewModelGenerator',
     $log,
     $q,
     ContactSchema,
+    ContactsMuting,
     DB,
     LineageModelGenerator,
     Search
@@ -243,12 +244,21 @@ angular.module('inboxServices').factory('ContactViewModelGenerator',
         });
     };
 
+    var setMutedState = function(model) {
+      return ContactsMuting.isMuted(model.doc)
+        .then(function(muted) {
+          model.muted = muted;
+          return model;
+        });
+    };
+
     return function(id, options) {
       return LineageModelGenerator.contact(id, options)
         .then(setChildren)
         .then(setReports)
         .then(setPrimaryContact)
-        .then(setSchemaFields);
+        .then(setSchemaFields)
+        .then(setMutedState);
     };
   }
 );

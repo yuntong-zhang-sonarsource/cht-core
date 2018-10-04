@@ -61,11 +61,11 @@ const getDistrictPhone = doc => {
 
 const setTasksStates = (doc, state, predicate) => {
   doc.scheduled_tasks = doc.scheduled_tasks || [];
-  _.each(doc.scheduled_tasks, task => {
+  return _.compact(_.map(doc.scheduled_tasks, task => {
     if (predicate.call(this, task)) {
-      taskUtils.setTaskState(task, state);
+      return taskUtils.setTaskState(task, state);
     }
-  });
+  })).length;
 };
 
 const addError = (doc, error) => {
@@ -210,16 +210,18 @@ module.exports = {
            (doc.contact && doc.contact.phone);
   },
   unmuteScheduledMessages: doc => {
-    setTasksStates(doc, 'scheduled', task => {
+    const hasUpdatedTasks = setTasksStates(doc, 'scheduled', task => {
       return task.state === 'muted';
     });
     doc.scheduled_tasks = _.filter(doc.scheduled_tasks, task => {
-      return new Date(task.due) > Date.now();
+      return task.state === 'scheduled' ? new Date(task.due) > Date.now() : true;
     });
+
+    return hasUpdatedTasks;
   },
   muteScheduledMessages: doc => {
-    setTasksStates(doc, 'muted', task => {
-      return task.state === 'scheduled';
+    return setTasksStates(doc, 'muted', task => {
+      return task.state === 'scheduled' || task.state === 'pending';
     });
   },
   getClinicID: getClinicID,

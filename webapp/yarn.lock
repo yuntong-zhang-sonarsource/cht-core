@@ -7,6 +7,9 @@
   dependencies:
     underscore "^1.9.1"
 
+"@shared-libs/muting-utils@file:../shared-libs/muting-utils":
+  version "1.0.0"
+
 "@shared-libs/registration-utils@file:../shared-libs/registration-utils":
   version "1.0.0"
 

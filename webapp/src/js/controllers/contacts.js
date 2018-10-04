@@ -19,6 +19,7 @@ var _ = require('underscore'),
     Changes,
     ContactSchema,
     ContactSummary,
+    ContactsMuting,
     Export,
     GetDataRecords,
     LiveList,
@@ -207,6 +208,7 @@ var _ = require('underscore'),
           getActionBarDataForChild(selectedDoc.type),
           getCanEdit(selectedDoc),
           ContactSummary(selected.doc, selected.reports, selected.lineage),
+          Settings()
         ])
         .then(function(results) {
           $scope.setTitle(results[0]);
@@ -221,6 +223,9 @@ var _ = require('underscore'),
             if (err) {
               $log.error('Error fetching relevant forms', err);
             }
+            var showUnmuteModal = function(formId) {
+              return $scope.selected.muted && !ContactsMuting.isUnmuteForm(results[4], formId);
+            };
             var formSummaries =
               forms &&
               forms.map(function(xForm) {
@@ -228,6 +233,7 @@ var _ = require('underscore'),
                   code: xForm.internalId,
                   title: translateTitle(xForm.translation_key, xForm.title),
                   icon: xForm.icon,
+                  showUnmuteModal: showUnmuteModal(xForm.internalId)
                 };
               });
             var canDelete =
@@ -426,7 +432,8 @@ var _ = require('underscore'),
         return (
           ContactSchema.getTypes().indexOf(change.doc.type) !== -1 ||
           liveList.containsDeleteStub(change.doc) ||
-          isRelevantVisitReport(change.doc)
+          isRelevantVisitReport(change.doc) ||
+          ContactsMuting.isMutedContactsChange(change)
         );
       },
     });

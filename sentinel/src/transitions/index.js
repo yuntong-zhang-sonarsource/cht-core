@@ -46,7 +46,8 @@ const AVAILABLE_TRANSITIONS = [
   'multi_report_alerts',
   'update_notifications',
   'update_scheduled_reports',
-  'resolve_pending'
+  'resolve_pending',
+  'muting'
 ];
 
 

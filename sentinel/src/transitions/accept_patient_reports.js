@@ -49,9 +49,10 @@ const getScheduledTasksByType = (registration, type) => {
 // find the messages to clear
 const findToClear = (registration, reported_date, config) => {
     // See: https://github.com/medic/medic-docs/blob/master/user/message-states.md#message-states-in-medic-webapp
-    // Both scheduled and pending have not yet been either seen by a gateway or
+    // Both scheduled and pending have not yet been either seen by  a gateway or
     // delivered, so they are both clearable.
-    const typesToClear = ['pending', 'scheduled'];
+    // Also clear `muted` schedules, as they can be `unmuted` later
+    const typesToClear = ['pending', 'scheduled', 'muted'];
 
     const reportedDateMoment = moment(reported_date);
     const taskTypes = config.silence_type.split(',').map(type => type.trim());

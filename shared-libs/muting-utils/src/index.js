@@ -1,41 +1,89 @@
+var mutedContactsIds;
 
-var getMutedStateById = function(DB, id) {
-  var options = {
-    start_key: [id],
-    end_key: [id, {}]
-  };
-
+var getMutedContactsDoc = function(DB) {
   return DB
-    .query('medic-client/docs_by_id_lineage', options)
-    .then(function(results) {
-      var keys = results.rows.map(function(row) {
-        return [true, row.value._id];
-      });
+    .get(module.exports.MUTED_CONTACTS_DOC_ID)
+    .catch(function(err) {
+      if (err && err.status === 404) {
+        return { _id: module.exports.MUTED_CONTACTS_DOC_ID, muted_contacts: [] };
+      }
 
-      return DB
-        .query('medic-client/contact_by_muted_flag', { keys: keys })
-        .then(function(result) {
-          return result.rows.some(function(row) {
-            return row.value;
-          });
-        });
+      throw(err);
     });
 };
 
-var getMutedState = function(doc) {
-  var isMutedInLineage = function(doc) {
-    return doc && (doc.muted || isMutedInLineage(doc.parent));
-  };
+var addMutedContactIds = function(DB, contactIds) {
+  return getMutedContactsDoc(DB).then(function(doc) {
+    contactIds.forEach(function(contactId) {
+      if (doc.muted_contacts.indexOf(contactId) === -1) {
+        doc.muted_contacts.push(contactId);
+      }
+    });
 
-  return isMutedInLineage(doc);
+    mutedContactsIds = doc.muted_contacts;
+    return DB.put(doc);
+  });
 };
 
-var getMutedContactsIds = function(DB) {
+var removeMutedContactIds = function(DB, contactIds) {
+  return getMutedContactsDoc(DB).then(function(doc) {
+    contactIds.forEach(function(contactId) {
+      var idx = doc.muted_contacts.indexOf(contactId);
+      if (idx !== -1) {
+        doc.muted_contacts.splice(1, idx);
+      }
+    });
 
+    mutedContactsIds = doc.muted_contacts;
+    return DB.put(doc);
+  });
 };
 
 module.exports = {
-  getMutedStateById: getMutedStateById,
-  getMutedState: getMutedState,
-  getMutedContactsIds: getMutedContactsIds
+  MUTED_CONTACTS_DOC_ID: 'muted-contacts',
+
+  // loads `muted-contacts` doc, stores and returns muted contacts list
+  getMutedContactsIds: function(DB, Promise, refresh) {
+    if (!refresh && mutedContactsIds) {
+      return Promise.resolve(mutedContactsIds);
+    }
+
+    return getMutedContactsDoc(DB).then(function(doc) {
+      mutedContactsIds = doc.muted_contacts;
+      return mutedContactsIds;
+    });
+  },
+
+  // returns whether a contact is muted
+  // accepts lineage as an object property (via `parent`) or as an array parameter
+  // not hydrated docs are checked against the muted-contacts doc list
+  isMuted: function(contact, lineage) {
+    var isMutedDoc = function(doc) {
+      return doc && ( doc.muted || mutedContactsIds.includes(doc._id) );
+    };
+
+    var isMutedInLineage = function(doc) {
+      return doc && (isMutedDoc(doc) || isMutedInLineage(doc.parent));
+    };
+
+    if (lineage) {
+      return isMutedDoc(contact) || !!lineage.find(function(parent) {
+        return isMutedDoc(parent);
+      });
+    }
+
+    return isMutedInLineage(contact);
+  },
+
+  // updates muted contacts list by adding/removing all provided contact ids
+  updateMutedContacts: function(DB, contacts, muted) {
+    var contactIds = contacts.map(function(contact) {
+      return contact._id;
+    });
+    return muted ? addMutedContactIds(DB, contactIds) : removeMutedContactIds(DB, contactIds);
+  },
+
+  _reset: function() {
+    mutedContactsIds = false;
+  }
 };

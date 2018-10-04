@@ -9,6 +9,7 @@ angular.module('inboxServices').factory('Select2Search',
     $translate,
     DB,
     LineageModelGenerator,
+    ContactsMuting,
     Search,
     Session,
     Settings
@@ -28,7 +29,7 @@ angular.module('inboxServices').factory('Select2Search',
 
     var defaultTemplateSelection = function(row) {
       if(row.doc) {
-        return row.doc.name;
+        return row.doc.name + (row.doc.muted ? ' (' + row.doc.muted + ')': '');
       }
       return row.text;
     };
@@ -60,6 +61,9 @@ angular.module('inboxServices').factory('Select2Search',
         return _.sortBy(documents, function(doc) {
           return doc.name;
         }).map(function(doc) {
+          if (doc.muted) {
+            doc.muted = $translate.instant('contact.muted');
+          }
           return {
             id: doc._id,
             doc: doc
@@ -101,6 +105,10 @@ angular.module('inboxServices').factory('Select2Search',
         return LineageModelGenerator.contact(id, { merge: true })
           .then(function(contact) {
             return contact && contact.doc;
+          })
+          .then(function(doc) {
+            doc.muted = ContactsMuting.isMuted(doc) ? $translate.instant('contact.muted') : '';
+            return doc;
           });
       };
 
@@ -187,9 +195,10 @@ angular.module('inboxServices').factory('Select2Search',
         }
       };
 
-
       initSelect2(selectEl);
-      return resolveInitialValue(selectEl, initialValue);
+      return ContactsMuting.loadMutedContactsIds(DB()).then(function() {
+        resolveInitialValue(selectEl, initialValue);
+      });
     };
   }
 );

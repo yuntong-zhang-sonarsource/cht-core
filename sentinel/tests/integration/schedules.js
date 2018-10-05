@@ -4,6 +4,7 @@ const transition = require('../../src/transitions/registration'),
       assert = require('chai').assert,
       moment = require('moment'),
       utils = require('../../src/lib/utils'),
+      mutingUtils = require('@shared-libs/muting-utils'),
       contact = {
         phone: '+1234',
         name: 'Julie',
@@ -37,7 +38,7 @@ describe('functional schedules', () => {
   afterEach(() => sinon.restore());
 
   it('registration sets up schedule', () => {
-
+    sinon.stub(mutingUtils, 'isMuted').returns(false);
     sinon.stub(transition, 'getConfig').returns([{
       form: 'PATR',
       events: [
@@ -110,7 +111,7 @@ describe('functional schedules', () => {
   });
 
   it('registration sets up schedule using translation_key', () => {
-
+    sinon.stub(mutingUtils, 'isMuted').returns(false);
     sinon.stub(transition, 'getConfig').returns([{
       form: 'PATR',
       events: [{
@@ -170,7 +171,7 @@ describe('functional schedules', () => {
   });
 
   it('registration sets up schedule using bool_expr', () => {
-
+    sinon.stub(mutingUtils, 'isMuted').returns(false);
     sinon.stub(transition, 'getConfig').returns([{
       form: 'PATR',
       events: [
@@ -244,6 +245,7 @@ describe('functional schedules', () => {
   });
 
   it('patients chp is resolved correctly as recipient', () => {
+    sinon.stub(mutingUtils, 'isMuted').returns(false);
     sinon.stub(transition, 'getConfig').returns([{
       form: 'PATR',
       events: [],
@@ -280,7 +282,7 @@ describe('functional schedules', () => {
   });
 
   it('two phase registration sets up schedule using bool_expr', () => {
-
+    sinon.stub(mutingUtils, 'isMuted').returns(false);
     sinon.stub(transition, 'getConfig').returns([{
       form: 'PATR',
       events: [
@@ -361,7 +363,7 @@ describe('functional schedules', () => {
   });
 
   it('no schedule using false bool_expr', () => {
-
+    sinon.stub(mutingUtils, 'isMuted').returns(false);
     sinon.stub(transition, 'getConfig').returns([{
       form: 'PATR',
       events: [

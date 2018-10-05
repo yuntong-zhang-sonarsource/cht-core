@@ -1,4 +1,5 @@
-var mutedContactsIds;
+var mutedContactsIds = [],
+    inited = false;
 
 var getMutedContactsDoc = function(DB) {
   return DB
@@ -44,12 +45,13 @@ module.exports = {
 
   // loads `muted-contacts` doc, stores and returns muted contacts list
   getMutedContactsIds: function(DB, Promise, refresh) {
-    if (!refresh && mutedContactsIds) {
+    if (!refresh && inited) {
       return Promise.resolve(mutedContactsIds);
     }
 
     return getMutedContactsDoc(DB).then(function(doc) {
       mutedContactsIds = doc.muted_contacts;
+      inited = true;
       return mutedContactsIds;
     });
   },
@@ -84,6 +86,6 @@ module.exports = {
   },
 
   _reset: function() {
-    mutedContactsIds = false;
+    inited = false;
   }
 };

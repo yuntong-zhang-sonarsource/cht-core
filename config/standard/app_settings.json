@@ -3330,10 +3330,6 @@
       }
     ]
   },
-  "muting": {
-    "mute_forms": ["mute_on"],
-    "unmute_forms": ["mute_off"]
-  },
   "_version": "2.9.0-alpha.4373",
   "transitions": {
     "default_responses": true,
@@ -3346,8 +3342,7 @@
     "update_scheduled_reports": false,
     "multi_report_alerts": false,
     "update_sent_forms": false,
-    "generate_patient_id_on_people": true,
-    "muting": true
+    "generate_patient_id_on_people": true
   },
   "forms": {
     "IMM": {

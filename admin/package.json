@@ -25,6 +25,7 @@
     "messageformat": "^2.0.4",
     "message-utils": "file:../shared-libs/message-utils",
     "moment": "^2.22.2",
+    "muting-utils": "file:../shared-libs/muting-utils",
     "object-path": "^0.11.4",
     "phone-number": "file:../shared-libs/phone-number",
     "pouchdb-browser": "^7.0.0",

@@ -107,7 +107,7 @@ angular.module('inboxServices').factory('Select2Search',
             return contact && contact.doc;
           })
           .then(function(doc) {
-            doc.muted = ContactsMuting.isMuted(doc) ? $translate.instant('contact.muted') : '';
+            doc.muted = ContactsMuting.isMutedSync(doc) ? $translate.instant('contact.muted') : '';
             return doc;
           });
       };

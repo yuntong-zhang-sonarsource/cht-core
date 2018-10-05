@@ -31,7 +31,7 @@ var removeMutedContactIds = function(DB, contactIds) {
     contactIds.forEach(function(contactId) {
       var idx = doc.muted_contacts.indexOf(contactId);
       if (idx !== -1) {
-        doc.muted_contacts.splice(1, idx);
+        doc.muted_contacts.splice(idx, 1);
       }
     });
 
@@ -65,7 +65,7 @@ module.exports = {
     };
 
     var isMutedInLineage = function(doc) {
-      return doc && (isMutedDoc(doc) || isMutedInLineage(doc.parent));
+      return !!(doc && (isMutedDoc(doc) || isMutedInLineage(doc.parent)));
     };
 
     if (lineage) {
@@ -77,8 +77,12 @@ module.exports = {
     return isMutedInLineage(contact);
   },
 
-  // updates muted contacts list by adding/removing all provided contact ids
-  updateMutedContacts: function(DB, contacts, muted) {
+  // updates muted-contacts list by adding/removing provided contact ids
+  updateMutedContacts: function(DB, contacts, muted, Promise) {
+    if (!contacts || !contacts.length) {
+      return Promise.resolve();
+    }
+
     var contactIds = contacts.map(function(contact) {
       return contact._id;
     });

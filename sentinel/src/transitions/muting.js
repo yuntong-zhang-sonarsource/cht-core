@@ -147,31 +147,42 @@ const unmuteAction = (doc, contact) => {
     }));
 };
 
+const isRelevantForm = doc => doc.form &&
+                              doc.type === 'data_record' &&
+                              ( isMuteForm(doc.form) || isUnmuteForm(doc.form) ) &&
+                              doc.fields &&
+                              ( doc.fields.patient_id || doc.fields.place_id );
+
+const isRelevantContact = doc => doc.type !== 'data_record' &&
+                                 Boolean(doc.muted) !== mutingUtils.isMuted(doc);
+
 module.exports = {
   init: () => {
     const forms = getConfig()[MUTE_PROPERTY];
     if (!forms || !_.isArray(forms) || !forms.length) {
       throw new Error(`Configuration error. Config must define have a '${CONFIG_NAME}.${MUTE_PROPERTY}' array defined.`);
     }
+    mutingUtils.getMutedContactsIds(db.medic, Promise);
   },
   filter: (doc, info = {}) => {
     return doc &&
-           doc.form &&
-           doc.type === 'data_record' &&
-           ( isMuteForm(doc.form) || isUnmuteForm(doc.form) ) &&
-           doc.fields &&
-           ( doc.fields.patient_id || doc.fields.place_id ) &&
+           (isRelevantForm(doc) || isRelevantContact(doc)) &&
            !transitionUtils.hasRun(info, TRANSITION_NAME);
+
   },
   onMatch: change => {
+    if (isRelevantContact(change.doc)) {
+      // fix discrepancy between `muted-contacts` doc and actual muted contacts
+      return mutingUtils
+        .updateMutedContacts(db.medic, [change.doc], change.doc.muted, Promise)
+        .then(() => false);
+    }
+
     const muting = isMuteForm(change.doc.form);
     let targetContact;
 
     return Promise
-      .all([
-        getContact(change.doc),
-        mutingUtils.getMutedContactsIds(db.medic)
-      ])
+      .all([ getContact(change.doc), mutingUtils.getMutedContactsIds(db.medic, Promise, true) ])
       .then(([ contact ]) => {
         return muting ? muteAction(change.doc, contact) : unmuteAction(change.doc, contact);
       })
@@ -182,7 +193,7 @@ module.exports = {
         }
 
         return mutingUtils
-          .updateMutedContacts(db.medic, result.contacts, muting)
+          .updateMutedContacts(db.medic, result.contacts, muting, Promise)
           .then(() => updateContacts(result.contacts, muting))
           .then(() => updateRegistrations(result.patientIds, muting))
           .then(registrations => {

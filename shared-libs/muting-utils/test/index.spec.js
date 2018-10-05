@@ -14,7 +14,7 @@ describe('mutingUtils', () => {
     db = { get: sinon.stub(), put: sinon.stub() };
   });
 
-  describe('loadMutedContactsIds', () => {
+  describe('getMutedContactsIds', () => {
     it('should return correct doc Id', () => {
       chai.expect(utils.MUTED_CONTACTS_DOC_ID).to.equal('muted-contacts');
     });

@@ -44,9 +44,13 @@ module.exports = {
   MUTED_CONTACTS_DOC_ID: 'muted-contacts',
 
   // loads `muted-contacts` doc, stores and returns muted contacts list
-  getMutedContactsIds: function(DB, Promise, refresh) {
+  getMutedContactsIds: function(DB, Promise, refresh, doc) {
     if (!refresh && inited) {
       return Promise.resolve(mutedContactsIds);
+    }
+
+    if (doc && doc.muted_contacts) {
+      mutedContactsIds = doc.muted_contacts;
     }
 
     return getMutedContactsDoc(DB).then(function(doc) {

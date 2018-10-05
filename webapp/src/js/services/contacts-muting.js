@@ -23,12 +23,12 @@ angular.module('inboxServices').factory('ContactsMuting',
 
     var inited = false;
 
-    var init = function(refresh) {
+    var init = function(refresh, doc) {
       if (!refresh && inited) {
         return $q.resolve();
       }
 
-      return ContactsMutingUtils.getMutedContactsIds(DB(), $q).then(function() {
+      return ContactsMutingUtils.getMutedContactsIds(DB(), $q, refresh, doc).then(function() {
         inited = true;
       });
     };
@@ -40,8 +40,8 @@ angular.module('inboxServices').factory('ContactsMuting',
     Changes({
       key: 'contacts-muting-service',
       filter: isMutedContactsChange,
-      callback: function() {
-        return init(true);
+      callback: function(change) {
+        return init(true, change.doc);
       }
     });
 
@@ -49,10 +49,11 @@ angular.module('inboxServices').factory('ContactsMuting',
       loadMutedContactsIds: init,
 
       isUnmuteForm: function(settings, formId) {
-        return settings &&
-               settings.muting &&
-               settings.muting.unmute_forms &&
-               settings.muting.unmute_forms.includes(formId);
+        return Boolean(settings &&
+                       formId &&
+                       settings.muting &&
+                       settings.muting.unmute_forms &&
+                       settings.muting.unmute_forms.includes(formId));
       },
 
       isMuted: function(doc, lineage) {

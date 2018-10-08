@@ -24,12 +24,12 @@ angular.module('inboxServices').factory('Select2Search',
       }
       // format escapes the content for us, and if we just return
       // a string select2 escapes it again, so return an element instead.
-      return $(format.sender(row.doc));
+      return $(format.sender(row.doc, $translate));
     };
 
     var defaultTemplateSelection = function(row) {
       if(row.doc) {
-        return row.doc.name + (row.doc.muted ? ' (' + row.doc.muted + ')': '');
+        return row.doc.name + (row.doc.muted ? ' (' + $translate.instant('contact.muted') + ')': '');
       }
       return row.text;
     };
@@ -61,9 +61,6 @@ angular.module('inboxServices').factory('Select2Search',
         return _.sortBy(documents, function(doc) {
           return doc.name;
         }).map(function(doc) {
-          if (doc.muted) {
-            doc.muted = $translate.instant('contact.muted');
-          }
           return {
             id: doc._id,
             doc: doc
@@ -107,7 +104,7 @@ angular.module('inboxServices').factory('Select2Search',
             return contact && contact.doc;
           })
           .then(function(doc) {
-            doc.muted = ContactsMuting.isMutedSync(doc) ? $translate.instant('contact.muted') : '';
+            doc.muted = ContactsMuting.isMutedSync(doc);
             return doc;
           });
       };

@@ -21,20 +21,20 @@ angular.module('inboxServices').factory('HydrateContactNames',
 
     var replaceContactIdsWithNames = function(summaries, contactSummaries) {
       summaries.forEach(function(summary) {
+        var lineage;
         if (summary.contact) {
           summary.contact = findContactName(contactSummaries, summary.contact);
         }
         if (summary.lineage && summary.lineage.length) {
-          var lineage = summary.lineage.map(function (id) {
+          lineage = summary.lineage.map(function (id) {
             return findContact(contactSummaries, id);
           });
 
-          summary.lineage = lineage.map(function(contactSummary) {
-            return contactSummary && contactSummary.name || null;
+          summary.lineage = summary.lineage.map(function(id) {
+            return findContactName(contactSummaries, id);
           });
-
-          summary.muted = ContactsMuting.isMutedSync(summary, lineage);
         }
+        summary.muted = ContactsMuting.isMutedSync(summary, lineage);
       });
       return summaries;
     };

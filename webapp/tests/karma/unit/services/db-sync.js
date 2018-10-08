@@ -160,6 +160,11 @@ describe('DBSync service', () => {
       const actual = filterFunction({ _id: '1', type: 'data_record' });
       chai.expect(actual).to.equal(true);
     });
+
+    it('does not replicate muted-contacts', () => {
+      const actual = filterFunction({ _id: 'muted-contacts' });
+      chai.expect(actual).to.equal(false);
+    });
   });
 
 });

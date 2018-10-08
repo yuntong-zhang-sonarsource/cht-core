@@ -379,6 +379,70 @@ describe('Contacts controller', () => {
         return testTranslation(form, 'a.form.keytranslated');
       });
     });
+
+    describe('muted contacts modal', () => {
+      it('should set all forms to not display muted modal when contact is not muted', () => {
+        const forms = [
+          { internalId: 'unmute', icon: 'icon', translation_key: 'form.unmute', title: 'unmute'},
+          { internalId: 'mute', icon: 'icon', translation_key: 'form.mute', title: 'mute'},
+          { internalId: 'visit', icon: 'icon', translation_key: 'form.visit', title: 'visit'}
+        ];
+        xmlForms.callsArgWith(2, null, forms);
+
+        return createController()
+          .getSetupPromiseForTesting()
+          .then(() => {
+            return scope.setSelected({ doc: { _id: 'my-contact' }, muted: false });
+          })
+          .then(() => {
+            assert(
+              scope.setRightActionBar.called,
+              'right actionBar should be set'
+            );
+            assert.deepEqual(scope.setRightActionBar.args[0][0].relevantForms, [
+              { code: 'unmute', icon: 'icon', title: 'form.unmutetranslated', showUnmuteModal: false},
+              { code: 'mute', icon: 'icon', title: 'form.mutetranslated', showUnmuteModal: false},
+              { code: 'visit', icon: 'icon', title: 'form.visittranslated', showUnmuteModal: false}
+            ]);
+
+            assert.equal(contactsMuting.isUnmuteForm.callCount, 0);
+          });
+      });
+
+      it('should set non-unmute forms ti display modal when contact is muted', () => {
+        const forms = [
+          { internalId: 'unmute', icon: 'icon', translation_key: 'form.unmute', title: 'unmute'},
+          { internalId: 'mute', icon: 'icon', translation_key: 'form.mute', title: 'mute'},
+          { internalId: 'visit', icon: 'icon', translation_key: 'form.visit', title: 'visit'}
+        ];
+        xmlForms.callsArgWith(2, null, forms);
+        contactsMuting.isUnmuteForm.returns(false);
+        contactsMuting.isUnmuteForm.withArgs(sinon.match.any, 'unmute').returns(true);
+        settings.resolves({ settings: 'settings' });
+
+        return createController()
+          .getSetupPromiseForTesting()
+          .then(() => {
+            return scope.setSelected({ doc: { _id: 'my-contact' }, muted: true });
+          })
+          .then(() => {
+            assert(
+              scope.setRightActionBar.called,
+              'right actionBar should be set'
+            );
+            assert.deepEqual(scope.setRightActionBar.args[0][0].relevantForms, [
+              { code: 'unmute', icon: 'icon', title: 'form.unmutetranslated', showUnmuteModal: false},
+              { code: 'mute', icon: 'icon', title: 'form.mutetranslated', showUnmuteModal: true},
+              { code: 'visit', icon: 'icon', title: 'form.visittranslated', showUnmuteModal: true}
+            ]);
+
+            assert.equal(contactsMuting.isUnmuteForm.callCount, 3);
+            assert.deepEqual(contactsMuting.isUnmuteForm.args[0], [{ settings: 'settings' }, 'unmute']);
+            assert.deepEqual(contactsMuting.isUnmuteForm.args[1], [{ settings: 'settings' }, 'mute']);
+            assert.deepEqual(contactsMuting.isUnmuteForm.args[2], [{ settings: 'settings' }, 'visit']);
+          });
+      });
+    });
   });
 
   describe('sets left actionBar', () => {
@@ -658,6 +722,23 @@ describe('Contacts controller', () => {
           assert.isNotOk(changesFilter({ doc: { type: 'data_record' } }));
           assert.isNotOk(changesFilter({ doc: { type: '' } }));
           assert.equal(contactsLiveList.containsDeleteStub.callCount, 3);
+        });
+    });
+
+    it('filtering returns true for muted-contacts changes', () => {
+      contactsMuting.isMutedContactsChange
+        .withArgs(sinon.match({ id: 'muted-contacts' })).returns(true)
+        .withArgs(sinon.match({ id: 'muted-contacts1' })).returns(false)
+        .withArgs(sinon.match({ id: 'foo' })).returns(true)
+        .withArgs(sinon.match({ id: 'bar' })).returns(false);
+
+      return createController()
+        .getSetupPromiseForTesting()
+        .then(() => {
+          assert.equal(changesFilter({ id: 'muted-contacts', doc: {} }), true);
+          assert.isNotOk(changesFilter({ id: 'muted-contacts1', doc: {} }));
+          assert.isNotOk(changesFilter({ id: 'bar', doc: {} }));
+          assert.equal(changesFilter({ id: 'foo', doc: {} }), true);
         });
     });
 

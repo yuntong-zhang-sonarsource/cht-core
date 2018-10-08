@@ -69,7 +69,7 @@ describe('ContactViewModelGenerator service', () => {
         icon: childPlaceIcon
       });
       lineageModelGenerator = { contact: sinon.stub() };
-      contactsMuting = { isMuted: sinon.stub().resolves() };
+      contactsMuting = { isMuted: sinon.stub() };
 
       $provide.factory('DB', KarmaUtils.mockDB({ get: dbGet, query: dbQuery, allDocs: dbAllDocs }));
       $provide.value('Search', search);
@@ -102,6 +102,7 @@ describe('ContactViewModelGenerator service', () => {
       stubDbGet(null, childContactPerson);
       stubSearch(null, []);
       stubDbQueryChildren(null, doc._id, childrenArray, contactsArray);
+      contactsMuting.isMuted.resolves(false);
       return service(doc._id);
     };
 
@@ -153,6 +154,7 @@ describe('ContactViewModelGenerator service', () => {
       stubDbGet({ status: 404 }, childContactPerson);
       stubSearch(null, []);
       stubDbQueryChildren(null, doc._id, [childPerson]);
+      contactsMuting.isMuted.resolves(false);
       return service(doc._id).then(model => {
         assert.equal(model.children.persons.length, 1);
       });
@@ -222,11 +224,11 @@ describe('ContactViewModelGenerator service', () => {
     const runPersonTest = parentDoc => {
       stubLineageModelGenerator(null, childContactPerson, [ parentDoc ]);
       stubSearch(null, []);
+      contactsMuting.isMuted.resolves(false);
       return service(childContactPerson._id);
     };
 
     describe('isPrimaryContact flag', () => {
-
       it('if selected doc is primary contact, the isPrimaryContact flag should be true', () => {
         return runPersonTest(doc).then(model => {
           assert(model.isPrimaryContact, 'isPrimaryContact flag should be true');
@@ -248,6 +250,7 @@ describe('ContactViewModelGenerator service', () => {
       stubLineageModelGenerator(null, doc);
       stubDbGet({ status: 404 }, childContactPerson);
       stubDbQueryChildren(null, doc._id, childrenArray);
+      contactsMuting.isMuted.resolves(false);
       return service(doc._id);
     };
 
@@ -336,6 +339,32 @@ describe('ContactViewModelGenerator service', () => {
         chai.expect(model.reports.length).to.equal(1);
         chai.expect(model.reports[0]._id).to.equal('ab');
         chai.expect(model.reports[0].fields.patient_name).to.equal(childPerson.name);
+      });
+    });
+  });
+
+  describe('Muting', () => {
+    it('should call service with doc ', () => {
+      contactsMuting.isMuted.resolves(false);
+      stubLineageModelGenerator(null, childContactPerson, [{ _id: 1 }, { _id: 2 }]);
+      stubSearch(null, []);
+
+      return service(childContactPerson._id).then(model => {
+        chai.expect(contactsMuting.isMuted.callCount).to.equal(1);
+        chai.expect(contactsMuting.isMuted.args[0]).to.deep.equal([ childContactPerson ]);
+        chai.expect(model.muted).to.equal(false);
+      });
+    });
+
+    it('should save muted value in model', () => {
+      contactsMuting.isMuted.resolves(true);
+      stubLineageModelGenerator(null, childContactPerson, [{ _id: 1 }, { _id: 2 }, { _id: 3 }]);
+      stubSearch(null, []);
+
+      return service(childContactPerson._id).then(model => {
+        chai.expect(contactsMuting.isMuted.callCount).to.equal(1);
+        chai.expect(contactsMuting.isMuted.args[0]).to.deep.equal([ childContactPerson ]);
+        chai.expect(model.muted).to.equal(true);
       });
     });
   });

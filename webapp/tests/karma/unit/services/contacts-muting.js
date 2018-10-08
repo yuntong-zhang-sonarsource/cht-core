@@ -144,11 +144,52 @@ describe('Contacts service', () => {
         chai.expect(result).to.equal(false);
         chai.expect(ContactsMutingUtils.getMutedContactsIds.callCount).to.equal(1);
         chai.expect(ContactsMutingUtils.isMuted.callCount).to.equal(1);
+        chai.expect(ContactsMutingUtils.isMuted.args[0]).to.deep.equal([{}, undefined]);
       });
     });
 
     it('should call library with correct arguments', () => {
+      ContactsMutingUtils.getMutedContactsIds.resolves();
+      ContactsMutingUtils.isMuted.returns(false);
 
+      return service.isMuted({ _id: '123'}, 'lineage').then(result => {
+        chai.expect(result).to.equal(false);
+        chai.expect(ContactsMutingUtils.isMuted.callCount).to.equal(1);
+        chai.expect(ContactsMutingUtils.isMuted.args[0]).to.deep.equal([{ _id: '123'}, 'lineage']);
+      });
+    });
+
+    it('should return result from lib call', () => {
+      ContactsMutingUtils.getMutedContactsIds.resolves();
+      ContactsMutingUtils.isMuted.returns('some random result');
+
+      return service.isMuted('test').then(result => {
+        chai.expect(result).to.equal('some random result');
+        chai.expect(ContactsMutingUtils.isMuted.args[0]).to.deep.equal(['test', undefined]);
+      });
+    });
+  });
+
+  describe('isMutedSync', () => {
+    it('should call library with correct arguments', () => {
+      ContactsMutingUtils.isMuted.returns(false);
+
+      service.isMutedSync('the doc', 'the lineage');
+      service.isMutedSync({ _id: '1234'});
+
+      chai.expect(ContactsMutingUtils.isMuted.callCount).to.equal(2);
+      chai.expect(ContactsMutingUtils.isMuted.args[0]).to.deep.equal(['the doc', 'the lineage']);
+      chai.expect(ContactsMutingUtils.isMuted.args[1]).to.deep.equal([{ _id: '1234'}, undefined]);
+    });
+
+    it('should return result from lib call', () => {
+      ContactsMutingUtils.isMuted.withArgs({ _id: 1}).returns(true);
+      ContactsMutingUtils.isMuted.withArgs({ _id: 2}).returns(false);
+      ContactsMutingUtils.isMuted.withArgs({ _id: 3}).returns('relay');
+
+      chai.expect(service.isMutedSync({ _id: 1 })).to.equal(true);
+      chai.expect(service.isMutedSync({ _id: 2 })).to.equal(false);
+      chai.expect(service.isMutedSync({ _id: 3 })).to.equal('relay');
     });
   });
 });

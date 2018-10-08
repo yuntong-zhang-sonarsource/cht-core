@@ -168,6 +168,28 @@ describe('mutingUtils', () => {
         chai.expect(utils.isMuted({ _id: 'm1' }, [{ _id: 'p1' }, { _id: 'p3' }, { _id: 'p2' }])).to.equal(true);
       });
     });
+
+    it('should work when first parameter is a string', () => {
+      db.get.resolves({ muted_contacts: ['m1', 'm2', 'm3'] });
+
+      return utils.getMutedContactsIds(db, Promise).then(() => {
+        chai.expect(utils.isMuted('m1')).to.equal(true);
+        chai.expect(utils.isMuted('m2')).to.equal(true);
+        chai.expect(utils.isMuted('someID')).to.equal(false);
+      });
+    });
+
+    it('should work with ID lineage', () => {
+      db.get.resolves({ muted_contacts: ['m1', 'm2', 'm3'] });
+
+      return utils.getMutedContactsIds(db, Promise).then(() => {
+        chai.expect(utils.isMuted('m1')).to.equal(true);
+        chai.expect(utils.isMuted({ _id: 'test' }, ['m1'])).to.equal(true);
+        chai.expect(utils.isMuted({ _id: 'm1' }, ['something'])).to.equal(true);
+        chai.expect(utils.isMuted({ _id: 'other' }, ['something'])).to.equal(false);
+        chai.expect(utils.isMuted('test', ['one', 'two', 'm3'])).to.equal(true);
+      });
+    });
   });
 
   describe('updateMutedContacts', () => {

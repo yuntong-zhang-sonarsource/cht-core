@@ -5,12 +5,14 @@ const _ = require('underscore'),
       dbNano = require('../db-nano'),
       utils = require('../lib/utils'),
       messages = require('../lib/messages'),
-      mutingUtils = require('@shared-libs/muting-utils');
+      mutingUtils = require('@shared-libs/muting-utils'),
+      objectPath = require('object-path');
 
 const TRANSITION_NAME = 'muting',
       CONFIG_NAME = 'muting',
       MUTE_PROPERTY = 'mute_forms',
-      UNMUTE_PROPERTY = 'unmute_forms';
+      UNMUTE_PROPERTY = 'unmute_forms',
+      CASCADE_FIELD_PROPERTY = 'cascade_unmute';
 
 const getConfig = () => {
   return config.get(CONFIG_NAME) || {};
@@ -49,10 +51,14 @@ const getContact = doc => {
     });
 };
 
-const getDescendants = (contactIds = []) => {
+const getDescendants = (contactIds = [], idsOnly = false) => {
+  if (typeof contactIds === 'string') {
+    contactIds = [contactIds];
+  }
+
   return db.medic
     .query('medic/contacts_by_depth', { keys: contactIds.map(contactId => ([contactId])) })
-    .then(result => result.rows.map(row => ({ _id: row.id, patient_id: row.value })));
+    .then(result => result.rows.map(row => idsOnly ? row.id : ({ _id: row.id, patientId: row.value })));
 };
 
 const updateRegistration = (registration, muted) => {
@@ -99,52 +105,92 @@ const muteAction = (doc, contact) => {
   if (currentlyMuted) {
     // don't update registrations if contact is already muted
     module.exports._addErr(contact.muted ? 'already_muted' : 'already_muted_in_lineage', doc);
-    return;
+    return { contacts: [contact] };
   }
 
-  return getDescendants([contact._id]).then(descendants => ({
+  return getDescendants(contact._id).then(descendants => ({
     contacts: [contact],
-    patientIds: descendants.map(descendant => descendant.value).filter(patientId => patientId)
+    patientIds: descendants.map(descendant => descendant.patientId).filter(patientId => patientId)
   }));
 };
 
+const shouldCascadeUnmute = doc => {
+  const property = getConfig()[CASCADE_FIELD_PROPERTY];
+  return property && objectPath.get(doc, property);
+};
+
 const unmuteAction = (doc, contact) => {
-  const currentlyMuted = mutingUtils.isMuted(contact);
+  const currentlyMuted = mutingUtils.isMuted(contact),
+        cascade = shouldCascadeUnmute(doc);
 
   if (!currentlyMuted) {
-    // don't update registrations if contact is already unmuted
+    // don't update registrations or contact if contact is already unmuted
     module.exports._addErr('already_unmuted', doc);
     return;
   }
 
-  // cascade the unmuting to the whole hierarchy
-  let rootContactId = contact._id,
-      parent = contact.parent;
-  while (parent && mutingUtils.isMuted(parent)) {
+  // propagate the unmuting upwards
+  let rootContactId,
+      parent = contact,
+      mutedAncestors = [];
+
+  while (parent && mutingUtils.isMuted(parent._id)) {
     rootContactId = parent._id;
+    mutedAncestors.push(parent._id);
     parent = parent.parent;
   }
 
-  const mutedDescendantIds = [],
-        patientIds = [];
+  const patientIds = [],
+        excludeDescendants = [];
 
-  return getDescendants([rootContactId])
-    .then(descendants => {
-      descendants.forEach(descendant => {
-        if (mutingUtils.isMuted(descendant)) {
-          mutedDescendantIds.push(descendant._id);
+  return Promise
+    .all([
+      getDescendants(rootContactId),
+      // unless chosen to cascade, individually muted descendants will remain muted
+      cascade ? [] : getDescendants(contact._id, true)
+    ])
+    .then(([ rootDescendants, ownDescendantsIds ]) => {
+
+      const isDescendant = contactId => contactId !== contact._id && ownDescendantsIds.includes(contactId),
+            isAncestor = contactId => mutedAncestors.includes(contactId);
+
+      rootDescendants.forEach(descendant => {
+        const isMuted = mutingUtils.isMuted(descendant);
+
+        if (isMuted) {
+          // do not unmute contacts from different branches
+          // do not unmute individually muted descendants
+          if (!isAncestor(descendant._id) || isDescendant(descendant._id)) {
+            excludeDescendants.push(descendant._id);
+            return;
+          }
+
+          mutedAncestors.push(descendant._id);
         }
-        if (descendant.patient_id) {
-          patientIds.push(descendant.patient_id);
+
+        if (descendant.patientId) {
+          patientIds.push(descendant.patientId);
         }
       });
 
-      return db.medic.allDocs({ keys: mutedDescendantIds, include_docs: true });
+      return Promise.all([
+        db.medic.allDocs({ keys: mutedAncestors, include_docs: true }),
+        getDescendants(excludeDescendants)
+      ]);
     })
-    .then(result => ({
-      contacts: result.rows.map(row => row.doc).filter(contact => contact),
-      patientIds
-    }));
+    .then(([ contacts, excludedDescendants ]) => {
+      excludedDescendants.forEach(descendant => {
+        const idx = patientIds.indexOf(descendant.patientId);
+        if (idx > -1) {
+          patientIds.splice(idx, 1);
+        }
+      });
+
+      return {
+        contacts: contacts.rows.map(row => row.doc).filter(contact => contact),
+        patientIds
+      };
+    });
 };
 
 const isRelevantForm = doc => doc.form &&

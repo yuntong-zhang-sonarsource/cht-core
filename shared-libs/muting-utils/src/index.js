@@ -63,8 +63,12 @@ module.exports = {
   // returns whether a contact is muted
   // accepts lineage as an object property (via `parent`) or as an array parameter
   // not hydrated docs are checked against the muted-contacts doc list
+  // accepts first parameter as a string to indicate a contactID
   isMuted: function(contact, lineage) {
     var isMutedDoc = function(doc) {
+      if (typeof doc === 'string') {
+        doc = { _id: doc };
+      }
       return doc && ( doc.muted || mutedContactsIds.includes(doc._id) );
     };
 

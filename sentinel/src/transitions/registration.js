@@ -14,7 +14,8 @@ const _ = require('underscore'),
       date = require('../date'),
       db = require('../db-nano'),
       NAME = 'registration',
-      XFORM_CONTENT_TYPE = 'xml';
+      XFORM_CONTENT_TYPE = 'xml',
+      mutingUtils = require('@shared-libs/muting-utils');
 
 const findFirstDefinedValue = (doc, fields) => {
   const definedField = _.find(fields, field => {
@@ -268,7 +269,6 @@ module.exports = {
     const self = module.exports;
 
     return new Promise((resolve, reject) => {
-
       const series = registrationConfig.events.map(event => cb => {
         const trigger = self.triggers[event.trigger];
         if (!trigger || event.name !== 'on_create') {
@@ -382,17 +382,18 @@ module.exports = {
   },
   assignSchedule: (options, callback) => {
     const patientId = options.doc.fields && options.doc.fields.patient_id;
-
-    getRegistrations(patientId, (err, registrations) => {
-      if (err) {
-        return callback(err);
-      }
-      options.params.forEach(scheduleName => {
-        const schedule = schedules.getScheduleConfig(scheduleName);
-        schedules.assignSchedule(
-          options.doc, schedule, registrations, options.doc.patient);
+    mutingUtils.getMutedContactsIds(dbPouch.medic, Promise, true).then(() => {
+      getRegistrations(patientId, (err, registrations) => {
+        if (err) {
+          return callback(err);
+        }
+        options.params.forEach(scheduleName => {
+          const schedule = schedules.getScheduleConfig(scheduleName);
+          schedules.assignSchedule(
+            options.doc, schedule, registrations, options.doc.patient);
+        });
+        callback();
       });
-      callback();
     });
   },
   setId: (options, callback) => {

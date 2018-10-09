@@ -210,14 +210,14 @@ module.exports = {
            (doc.contact && doc.contact.phone);
   },
   unmuteScheduledMessages: doc => {
-    const hasUpdatedTasks = setTasksStates(doc, 'scheduled', task => {
+    const nbrUpdatedTasks = setTasksStates(doc, 'scheduled', task => {
       return task.state === 'muted';
     });
     doc.scheduled_tasks = _.filter(doc.scheduled_tasks, task => {
       return task.state === 'scheduled' ? new Date(task.due) > Date.now() : true;
     });
 
-    return hasUpdatedTasks;
+    return nbrUpdatedTasks;
   },
   muteScheduledMessages: doc => {
     return setTasksStates(doc, 'muted', task => {

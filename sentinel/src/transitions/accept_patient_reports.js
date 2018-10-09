@@ -51,7 +51,7 @@ const findToClear = (registration, reported_date, config) => {
     // See: https://github.com/medic/medic-docs/blob/master/user/message-states.md#message-states-in-medic-webapp
     // Both scheduled and pending have not yet been either seen by  a gateway or
     // delivered, so they are both clearable.
-    // Also clear `muted` schedules, as they can be `unmuted` later
+    // Also clear `muted` schedules, as they could be `unmuted` later
     const typesToClear = ['pending', 'scheduled', 'muted'];
 
     const reportedDateMoment = moment(reported_date);

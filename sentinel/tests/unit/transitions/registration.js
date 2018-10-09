@@ -6,7 +6,8 @@ const should = require('chai').should(),
       messages = require('../../../src/lib/messages'),
       utils = require('../../../src/lib/utils'),
       config = require('../../../src/config'),
-      transitionUtils = require('../../../src/transitions/utils');
+      transitionUtils = require('../../../src/transitions/utils'),
+      mutingUtils = require('@shared-libs/muting-utils');
 
 describe('registration', () => {
 
@@ -370,6 +371,7 @@ describe('registration', () => {
 
   describe('assign_schedule', () => {
     it('event creates the named schedule', done => {
+      sinon.stub(mutingUtils, 'getMutedContactsIds').resolves();
       const change = { doc: {
         type: 'data_record',
         form: 'R',
@@ -394,6 +396,7 @@ describe('registration', () => {
         assignSchedule.args[0][1].should.equal('someschedule');
         assignSchedule.args[0][2][0]._id.should.equal('xyz');
         getRegistrations.callCount.should.equal(1);
+        mutingUtils.getMutedContactsIds.callCount.should.equal(1);
         done();
       });
     });

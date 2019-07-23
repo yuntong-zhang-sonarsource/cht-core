@@ -259,7 +259,8 @@ const initFeed = (req, res) => {
     pendingChanges: [],
     results: [],
     limit: req.query && req.query.limit || config.get('changes_controller').changes_limit,
-    reiterate_changes: config.get('changes_controller').reiterate_changes
+    reiterate_changes: config.get('changes_controller').reiterate_changes,
+    initialReplication: req.query && req.query.initial_replication
   };
 
   if (config.get('changes_controller').debounce_interval) {

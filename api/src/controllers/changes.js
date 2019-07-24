@@ -10,6 +10,7 @@ const auth = require('../auth'),
       serverChecks = require('@medic/server-checks'),
       environment = require('../environment'),
       semver = require('semver');
+const serverSidePurge = require('../services/server-side-purge-roles');
 
 let inited = false,
     continuousFeed = false,
@@ -171,8 +172,11 @@ const restartNormalFeed = feed => {
     .getAllowedDocIds(feed)
     .then(allowedDocIds => {
       feed.allowedDocIds = allowedDocIds;
+      return filterPurgedIds(feed);
+    })
+    .then(() => {
       getChanges(feed);
-  });
+    });
 };
 
 const getChanges = feed => {
@@ -230,6 +234,9 @@ const getChanges = feed => {
       processPendingChanges(feed, limitChangesRequests && feed.lastSeq);
 
       if (feed.results.length || !isLongpoll(feed.req)) {
+        if (!feed.results.length) {
+          // get latest changes
+        }
         // send response downstream
         return endFeed(feed);
       }
@@ -280,7 +287,42 @@ const initFeed = (req, res) => {
     })
     .then(allowedDocIds => {
       feed.allowedDocIds = allowedDocIds;
-      return feed;
+      return filterPurgedIds(feed);
+    })
+    .then(() => feed);
+};
+
+const difference = (array1, array2) => {
+  array1 = array1.sort();
+  array2 = array2.sort();
+
+  const diff = [];
+  let i = 0;
+  let j = 0;
+  while (i < array1.length && j < array2.length) {
+    if (array1[i] === array2[j]) {
+      i++;
+      j++;
+    } else if (array1[i] > array2[j]) {
+      j++;
+    } else {
+      diff.push(array1[i]);
+      i++;
+    }
+  }
+
+  return diff;
+};
+
+const filterPurgedIds = feed => {
+  if (!feed.initialReplication) {
+    return Promise.resolve();
+  }
+
+  return serverSidePurge
+    .getPurgedIds({ roles: feed.userCtx.roles, docIds: feed.allowedDocIds, checkPointerId: feed.req.replicationId })
+    .then(purgedIds => {
+      feed.allowedDocIds = difference(feed.allowedDocIds, purgedIds);
     });
 };
 

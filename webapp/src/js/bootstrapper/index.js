@@ -31,15 +31,18 @@
     }
   };
 
-  const getDbInfo = function() {
+  const getBaseUrl = () => {
     // parse the URL to determine the remote and local database names
     const location = window.location;
-    const dbName = 'medic';
     const port = location.port ? ':' + location.port : '';
-    const remoteDB = location.protocol + '//' + location.hostname + port + '/' + dbName;
+    return `${location.protocol}//${location.hostname}${port}`;
+  };
+
+  const getDbInfo = function() {
+    const dbName = 'medic';
     return {
       name: dbName,
-      remote: remoteDB
+      remote: `${getBaseUrl()}/${dbName}`
     };
   };
 
@@ -51,6 +54,10 @@
     return localDb.id().then(id => {
       POUCHDB_OPTIONS.remote.headers['medic-replication-id'] = id;
     });
+  };
+
+  const initPurgeCheckpoint = (db) => {
+    return db.fetch(`${getBaseUrl()}/api/v1/server-side-purge/checkpoint?seq=now`);
   };
 
   var initialReplication = function(localDb, remoteDb) {
@@ -73,6 +80,7 @@
       });
 
     return replicator
+      .then(() => initPurgeCheckpoint(remoteDb))
       .then(function() {
         var duration = Date.now() - dbSyncStartTime;
         console.info('Initial sync completed successfully in ' + (duration / 1000) + ' seconds');
@@ -127,9 +135,8 @@
     $('#btn-reload').click(() => window.location.reload(false));
   };
 
-  var getDdoc = function(localDb) {
-    return localDb.get('_design/medic-client');
-  };
+  const getDdoc = localDb => localDb.get('_design/medic-client');
+  const getSettingsDoc = localDb => localDb.get('settings');
 
   module.exports = function(POUCHDB_OPTIONS, callback) {
     var dbInfo = getDbInfo();
@@ -154,7 +161,10 @@
     const localDb = window.PouchDB(localDbName, POUCHDB_OPTIONS.local);
     const remoteDb = window.PouchDB(dbInfo.remote, POUCHDB_OPTIONS.remote);
 
-    const testReplicationNeeded = () => getDdoc(localDb).then(() => false).catch(() => true);
+    const testReplicationNeeded = () => Promise
+      .all([getDdoc(localDb), getSettingsDoc(localDb)])
+      .then(() => false)
+      .catch(() => true);
 
     let isInitialReplicationNeeded;
     Promise.all([swRegistration, testReplicationNeeded(), setReplicationId(POUCHDB_OPTIONS, localDb)])

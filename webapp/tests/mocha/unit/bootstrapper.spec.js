@@ -3,7 +3,8 @@ const bootstrapper = require('../../../src/js/bootstrapper'),
       { expect, assert } = require('chai'),
       pouchDbOptions = {
         local: { auto_compaction: true },
-        remote: { skip_setup: true }
+        remote: { skip_setup: true },
+        remote_headers: { 'Accept': 'application/json' }
       };
 
 let originalDocument,
@@ -14,26 +15,30 @@ let originalDocument,
     localClose,
     registered,
     remoteClose;
+let localId;
+let remoteFetch;
 
 describe('bootstrapper', () => {
 
-// ignore "Read Only" jshint error for overwriting `document` and `window`
-// jshint -W020
   beforeEach(done => {
     pouchDb = sinon.stub();
     localGet = sinon.stub();
     localReplicate = sinon.stub();
     localClose = sinon.stub();
     remoteClose = sinon.stub();
+    localId = sinon.stub().resolves();
+    remoteFetch = sinon.stub();
 
     pouchDb.onCall(0).returns({
       get: localGet,
       replicate: { from: localReplicate },
-      close: localClose
+      close: localClose,
+      id: localId
     });
     pouchDb.onCall(1).returns({
       remote: true,
-      close: remoteClose
+      close: remoteClose,
+      fetch: remoteFetch
     });
     registered = {};
 
@@ -97,10 +102,32 @@ describe('bootstrapper', () => {
     });
   });
 
+  it('should initialize replication header with local db id', done => {
+    setUserCtxCookie({ name: 'jim' });
+
+    localGet.withArgs('_design/medic-client').resolves({_id: '_design/medic-client'});
+    localGet.withArgs('settings').resolves({_id: 'settings', settings: {}});
+    localId.resolves('some-randomn-uuid');
+
+    bootstrapper(pouchDbOptions, err => {
+      assert.equal(null, err);
+      assert.equal(localId.callCount, 1);
+      assert.deepEqual(pouchDbOptions, {
+        local: { auto_compaction: true },
+        remote: { skip_setup: true },
+        remote_headers: {
+          'Accept': 'application/json',
+          'medic-replication-id': 'some-randomn-uuid'
+        }
+      });
+      done();
+    });
+  });
+
   it('returns if local db already has client ddoc', done => {
     setUserCtxCookie({ name: 'jim' });
-    localGet.withArgs('_design/medic-client').returns(Promise.resolve({_id: '_design/medic-client'}));
-    localGet.withArgs('settings').returns(Promise.resolve({_id: 'settings', settings: {}}));
+    localGet.withArgs('_design/medic-client').resolves({_id: '_design/medic-client'});
+    localGet.withArgs('settings').resolves({_id: 'settings', settings: {}});
 
     bootstrapper(pouchDbOptions, err => {
       assert.equal(null, err);
@@ -108,9 +135,10 @@ describe('bootstrapper', () => {
       assert.equal(localClose.callCount, 1);
       assert.equal(pouchDb.args[0][0], 'medic-user-jim');
       assert.deepEqual(pouchDb.args[0][1], { auto_compaction: true });
-      assert.equal(localGet.callCount, 2);
+      assert.equal(localGet.callCount, 3);
       assert.equal(localGet.args[0][0], '_design/medic-client');
       assert.equal(localGet.args[1][0], 'settings');
+      assert.equal(localGet.args[2][0], 'settings');
       done();
     });
   });
@@ -119,11 +147,14 @@ describe('bootstrapper', () => {
     setUserCtxCookie({ name: 'jim' });
     localGet.withArgs('_design/medic-client').onCall(0).rejects();
     localGet.withArgs('_design/medic-client').onCall(1).resolves();
-    localGet.withArgs('settings').returns(Promise.resolve({_id: 'settings', settings: {}}));
+    localGet.withArgs('settings').resolves({_id: 'settings', settings: {}});
 
     const localReplicateResult = Promise.resolve();
     localReplicateResult.on = () => {};
     localReplicate.returns(localReplicateResult);
+
+    localId.resolves('some random string');
+    remoteFetch.resolves();
 
     bootstrapper(pouchDbOptions, err => {
       assert.equal(null, err);
@@ -132,9 +163,11 @@ describe('bootstrapper', () => {
       assert.deepEqual(pouchDb.args[0][1], { auto_compaction: true });
       assert.equal(pouchDb.args[1][0], 'http://localhost:5988/medic');
       assert.deepEqual(pouchDb.args[1][1], { skip_setup: true });
-      assert.equal(localGet.callCount, 3);
+      assert.equal(localGet.callCount, 5);
       assert.equal(localGet.args[0][0], '_design/medic-client');
-      assert.equal(localGet.args[1][0], '_design/medic-client');
+      assert.equal(localGet.args[1][0], 'settings');
+      assert.equal(localGet.args[2][0], '_design/medic-client');
+      assert.equal(localGet.args[3][0], 'settings');
       assert.equal(localReplicate.callCount, 1);
       assert.equal(localReplicate.args[0][0].remote, true);
       assert.deepEqual(localReplicate.args[0][1], {
@@ -142,7 +175,51 @@ describe('bootstrapper', () => {
         retry: false,
         heartbeat: 10000,
         timeout: 600000,
+        query_params: { initial_replication: true },
       });
+      assert.equal(remoteFetch.callCount, 1);
+      assert.deepEqual(remoteFetch.args[0], ['http://localhost:5988/api/v1/server-side-purge/checkpoint?seq=now']);
+
+      assert.equal(localClose.callCount, 1);
+      assert.equal(remoteClose.callCount, 1);
+      done();
+    });
+  });
+
+  it('performs initial replication, checking that settings doc exists', done => {
+    setUserCtxCookie({ name: 'jim' });
+    localGet.withArgs('_design/medic-client').resolves();
+    localGet.withArgs('settings').onCall(0).rejects();
+    localGet.withArgs('settings').resolves({_id: 'settings', settings: {}});
+
+    const localReplicateResult = Promise.resolve();
+    localReplicateResult.on = () => {};
+    localReplicate.returns(localReplicateResult);
+    remoteFetch.resolves();
+
+    bootstrapper(pouchDbOptions, err => {
+      assert.equal(null, err);
+      assert.equal(pouchDb.callCount, 2);
+      assert.equal(pouchDb.args[0][0], 'medic-user-jim');
+      assert.deepEqual(pouchDb.args[0][1], { auto_compaction: true });
+      assert.equal(pouchDb.args[1][0], 'http://localhost:5988/medic');
+      assert.deepEqual(pouchDb.args[1][1], { skip_setup: true });
+      assert.equal(localGet.callCount, 5);
+      assert.equal(localGet.args[0][0], '_design/medic-client');
+      assert.equal(localGet.args[1][0], 'settings');
+      assert.equal(localGet.args[2][0], '_design/medic-client');
+      assert.equal(localGet.args[3][0], 'settings');
+      assert.equal(localReplicate.callCount, 1);
+      assert.equal(localReplicate.args[0][0].remote, true);
+      assert.deepEqual(localReplicate.args[0][1], {
+        live: false,
+        retry: false,
+        heartbeat: 10000,
+        timeout: 600000,
+        query_params: { initial_replication: true },
+      });
+      assert.equal(remoteFetch.callCount, 1);
+      assert.deepEqual(remoteFetch.args[0], ['http://localhost:5988/api/v1/server-side-purge/checkpoint?seq=now']);
       assert.equal(localClose.callCount, 1);
       assert.equal(remoteClose.callCount, 1);
       done();
@@ -188,6 +265,7 @@ describe('bootstrapper', () => {
     localReplicate.returns(localReplicateResult);
 
     bootstrapper(pouchDbOptions, err => {
+      assert.equal(remoteFetch.callCount, 0);
       assert.equal(err.status, 404);
       assert.equal(err.redirect, null);
       done();
@@ -198,6 +276,7 @@ describe('bootstrapper', () => {
     setUserCtxCookie({ name: 'jim' });
 
     localGet.withArgs('_design/medic-client').onCall(0).rejects();
+    localGet.withArgs('settings').rejects();
 
     const localReplicateResult = Promise.resolve();
     localReplicateResult.on = sinon.stub();
@@ -207,7 +286,8 @@ describe('bootstrapper', () => {
 
     bootstrapper(pouchDbOptions, err => {
       assert.equal(err.message, 'Initial replication failed');
-      assert.equal(localGet.callCount, 2);
+      assert.equal(localGet.callCount, 4);
+      assert.equal(remoteFetch.callCount, 1);
       assert.equal(localClose.callCount, 1);
       assert.equal(remoteClose.callCount, 1);
       done();
@@ -219,7 +299,8 @@ describe('bootstrapper', () => {
     pouchDb.onCall(0).returns({
       get: sinon.stub().resolves(),
       replicate: { from: sinon.stub() },
-      close: sinon.stub()
+      close: sinon.stub(),
+      id: sinon.stub().resolves('aaa')
     });
 
     const failingRegister = sinon.stub().rejects('error');

@@ -10,7 +10,7 @@ const auth = require('../auth'),
       serverChecks = require('@medic/server-checks'),
       environment = require('../environment'),
       semver = require('semver');
-const serverSidePurge = require('../services/server-side-purge-roles');
+const serverSidePurge = require('../services/server-side-purge');
 
 let inited = false,
     continuousFeed = false,
@@ -312,7 +312,9 @@ const difference = (array1, array2) => {
 };
 
 const filterPurgedIds = feed => {
-  return Promise.resolve();
+  if (!feed.initialReplication) {
+    return Promise.resolve();
+  }
 
   return serverSidePurge
     .getPurgedIds(feed.userCtx.roles, feed.allowedDocIds)

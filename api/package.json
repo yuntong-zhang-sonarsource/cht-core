@@ -90,6 +90,7 @@
     "lineage",
     "message-utils",
     "phone-number",
+    "purging-utils",
     "registration-utils",
     "search",
     "server-checks",

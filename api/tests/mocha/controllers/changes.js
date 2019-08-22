@@ -39,7 +39,7 @@ describe('Changes controller', () => {
     realSetTimeout = setTimeout;
     clock = sinon.useFakeTimers();
     emitters = [];
-    userCtx = { name: 'user', facility_id: 'facility', contact_id: 'contact' };
+    userCtx = { name: 'user', facility_id: 'facility', contact_id: 'contact', roles: ['a', 'b'] };
     testReq = { on: sinon.stub().callsFake((event, fn) => reqOnClose = fn), userCtx: userCtx};
     testRes = {
       type: sinon.stub(),
@@ -64,7 +64,7 @@ describe('Changes controller', () => {
     sinon.stub(authorization, 'getViewResults').returns({});
     sinon.stub(authorization, 'allowedDoc');
     sinon.stub(authorization, 'getDepth').returns(1);
-    sinon.stub(authorization, 'getAuthorizationContext').resolves({});
+    sinon.stub(authorization, 'getAuthorizationContext').resolves({ userCtx });
     sinon.stub(authorization, 'getAllowedDocIds').resolves({});
     sinon.stub(authorization, 'isAuthChange').returns(false);
     sinon.stub(authorization, 'filterAllowedDocs').returns([]);
@@ -77,6 +77,9 @@ describe('Changes controller', () => {
     sinon.stub(_, 'now').callsFake(Date.now); // force underscore's debounce to use fake timers!
     sinon.stub(config, 'get').returns(defaultSettings);
     sinon.stub(serverChecks, 'getCouchDbVersion').resolves('2.2.0');
+
+    sinon.stub(purgedDocs, 'init');
+    sinon.stub(purgedDocs, 'getPurgedIds').resolves([]);
 
     ChangesEmitter = function(opts) {
       changesSpy(opts);
@@ -300,7 +303,7 @@ describe('Changes controller', () => {
       const subjectIds = ['s1', 's2', 's3'],
             allowedDocIds = ['d1', 'd2', 'd3'],
             contactsByDepthKeys = [['facility_id']];
-      authorization.getAuthorizationContext.resolves({ subjectIds, contactsByDepthKeys });
+      authorization.getAuthorizationContext.resolves({ subjectIds, contactsByDepthKeys, userCtx });
       authorization.getAllowedDocIds.resolves(allowedDocIds);
       controller.request(testReq, testRes);
       return nextTick().then(() => {
@@ -325,8 +328,34 @@ describe('Changes controller', () => {
       authorization.getAuthorizationContext.resolves({ subjectIds, contactsByDepthKeys, userCtx });
       authorization.getAllowedDocIds.resolves(allowedDocIds);
       testReq.query = { initial_replication: true };
-      sinon.stub(purgedDocs, 'init');
-      sinon.stub(purgedDocs, 'getPurgedIds').resolves(purgedIds);
+      purgedDocs.getPurgedIds.resolves(purgedIds);
+
+      controller.request(testReq, testRes);
+      return nextTick().then(() => {
+        authorization.getAuthorizationContext.callCount.should.equal(1);
+        authorization.getAuthorizationContext.withArgs(userCtx).callCount.should.equal(1);
+        authorization.getAllowedDocIds.callCount.should.equal(1);
+        authorization.getAllowedDocIds
+          .withArgs(sinon.match({ req: { userCtx }, subjectIds, contactsByDepthKeys }))
+          .callCount.should.equal(1);
+        const feed = controller._getNormalFeeds()[0];
+        purgedDocs.init.callCount.should.deep.equal(1);
+        purgedDocs.getPurgedIds.callCount.should.equal(1);
+        purgedDocs.getPurgedIds.args[0].should.deep.equal([['a', 'b'], allowedDocIds]);
+        feed.allowedDocIds.should.deep.equal(_.difference(allowedDocIds, purgedIds));
+      });
+    });
+
+    it('should filter allowedDocIds to not include purges when performing any replication', () => {
+      const subjectIds = ['s1', 's2', 's3'];
+      const allowedDocIds = ['d1', 'd2', 'd3', 'd4', 'd5', 'd6'];
+      const purgedIds = ['d2', 'd6', 'd3'];
+      const contactsByDepthKeys = [['facility_id']];
+      userCtx.roles = ['a', 'b'];
+
+      authorization.getAuthorizationContext.resolves({ subjectIds, contactsByDepthKeys, userCtx });
+      authorization.getAllowedDocIds.resolves(allowedDocIds);
+      purgedDocs.getPurgedIds.resolves(purgedIds);
 
       controller.request(testReq, testRes);
       return nextTick().then(() => {
@@ -1421,7 +1450,7 @@ describe('Changes controller', () => {
       defaultSettings.reiterate_changes = false;
       testReq.query = { feed: 'longpoll', since: 'seq' };
       testReq.id = 'myFeed';
-      authorization.getAuthorizationContext.resolves({ subjectIds: ['a', 'b'], contactsByDepthKeys: []});
+      authorization.getAuthorizationContext.resolves({ subjectIds: ['a', 'b'], contactsByDepthKeys: [], userCtx});
       authorization.getAllowedDocIds.onCall(0).resolves([ 'a', 'b' ]);
       authorization.getAllowedDocIds.onCall(1).resolves([ 'a', 'b', 'c', 'd' ]);
       authorization.allowedDoc.withArgs(1).returns(true);

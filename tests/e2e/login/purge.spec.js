@@ -239,14 +239,6 @@ describe('Purging on login', () => {
     }));
   };
 
-  const getDocIds = () => {
-    return browser.executeAsyncScript((() => {
-      let callback = arguments[arguments.length - 1];
-      let db = window.PouchDB('medic-user-e2e_restricted');
-      db.allDocs().then(result => callback(result));
-    }));
-  };
-
   it('Logging in as a restricted user with configured purge rules should not download purged docs', () => {
     utils.resetBrowser();
     commonElements.goToLoginPage();
@@ -335,9 +327,9 @@ describe('Purging on login', () => {
       });
     });
 
-    getDocIds().then(result => {
-      console.log(JSON.stringify(result));
-    });
+    element.all(by.css('#reports-list .unfiltered > li'))
+      .then(items => Promise.all(items.map(item => item.getAttribute('data-record-id'))))
+      .then(ids => console.log(ids));
     reports.expectReportsToExist([goodFormId, goodFormId2]);
     reports.expectReportsToNotExist([badFormId, badFormId2]);
   });

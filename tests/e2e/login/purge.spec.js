@@ -327,6 +327,7 @@ describe('Purging on login', () => {
       });
     });
 
+    commonElements.goToReports();
     element.all(by.css('#reports-list .unfiltered > li'))
       .then(items => Promise.all(items.map(item => item.getAttribute('data-record-id'))))
       .then(ids => console.log(ids));

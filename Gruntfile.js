@@ -1051,8 +1051,8 @@ module.exports = function(grunt) {
     'static-analysis',
     'build',
     'mochaTest:api-integration',
-    'unit',
-    'exec:test-standard'
+    //'unit',
+    //'exec:test-standard'
   ]);
 
   grunt.registerTask('ci-e2e', 'Run e2e tests for CI', [

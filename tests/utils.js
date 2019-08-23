@@ -582,5 +582,7 @@ module.exports = {
   // @return {Promise}
   deleteUsers: deleteUsers,
 
-  setDebug: debug => e2eDebug = debug
+  setDebug: debug => e2eDebug = debug,
+
+  refreshToGetNewSettings: refreshToGetNewSettings,
 };

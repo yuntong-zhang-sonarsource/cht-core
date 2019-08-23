@@ -284,6 +284,7 @@ describe('Purging on login', () => {
 
     browser.wait(() => utils.saveDocs(subsequentReports).then(() => true));
     commonElements.sync();
+    commonElements.goToReports();
     reports.expectReportsToExist([goodFormId, goodFormId2, badFormId2]);
 
     browser.wait(() => utils.revertSettings(true).then(() => true));

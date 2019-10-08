@@ -209,7 +209,9 @@ describe('Purging on login', () => {
       }))
       .then(() => sentinelUtils.getCurrentSeq())
       .then(result => seq = result)
+      .then(() => console.log('updating settings1'))
       .then(() => utils.updateSettings({ purge: { fn: purgeFn.toString(), text_expression: 'every 1 seconds' } }, true))
+      .then(() => console.log('settings updated'))
       .then(() => restartSentinel())
       .then(() => sentinelUtils.waitForPurgeCompletion(seq))
       .then(() => done()).catch(done.fail);
@@ -291,9 +293,12 @@ describe('Purging on login', () => {
         run_every_days: '0'
       };
       return utils.revertSettings(true)
+        .then(() => console.log('reverted settings1'))
         .then(() => sentinelUtils.getCurrentSeq())
         .then(result => seq = result)
+        .then(() => console.log('updating settings2'))
         .then(() => utils.updateSettings({ purge: purgeSettings}, true))
+        .then(() => console.log('settings updated'))
         .then(() => restartSentinel())
         .then(() => sentinelUtils.waitForPurgeCompletion(seq))
         .then(() => true);

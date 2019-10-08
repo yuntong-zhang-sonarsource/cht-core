@@ -199,6 +199,7 @@ describe('Purging on login', () => {
 
   beforeAll(done => {
     let seq;
+
     return utils
       .saveDocs(initialReports.concat(initialDocs))
       .then(() => utils.request({

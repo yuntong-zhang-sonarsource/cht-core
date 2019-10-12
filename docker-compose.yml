@@ -1,0 +1,51 @@
+version: '3.7'
+
+services:
+  couchdb:
+    container_name: medic-couchdb
+    image: medicmobile/couchdb:2.3.1-test11
+    environment:
+      - COUCHDB_USER=${COUCHDB_USER}
+      - COUCHDB_PASSWORD=${COUCHDB_PASSWORD}
+    # https://hub.docker.com/_/couchdb
+    volumes:
+      - medic-data:/opt/couchdb/data
+      - medic-couchconfig:/opt/couchdb/etc/local.d
+    networks:
+      - medic-net
+
+  medic-api:
+    container_name: medic-api
+    image: medicmobile/medic-api:3.6.1-test27
+    environment:
+      COUCHDB_SERVICE_NAME: couchdb
+      DOCKER_COUCHDB_ADMIN_PASSWORD: ${DOCKER_COUCHDB_ADMIN_PASSWORD}
+      COUCH_NODE_NAME: "couchdb@127.0.0.1"
+      COUCHDB_USER: ${COUCHDB_USER}
+      COUCHDB_PASSWORD: ${COUCHDB_PASSWORD}
+    volumes:
+      - medic-couchconfig:/opt/couchdb/etc/local.d
+    networks:
+      - medic-net
+    depends_on:
+      - couchdb
+
+# medic-api launches with postinstall script that sets up db's, users.
+
+volumes:
+  medic-data:
+  medic-couchconfig:
+
+networks:
+  medic-net:
+
+#  medic-sentinel:
+#    container_name: medic-sentinel
+#    image: medicmobile/medic-sentinel:3.6.1-test1
+#    environment:
+#      COUCH_URL: "http://medic-sentinel:$(cat /opt/couchdb/etc/local.d/passwd/medic-sentinel)@medic-couchdb:5985/medic"
+#      COUCH_NODE_NAME: "couchdb@127.0.0.1"
+#    volumes:
+#      - medic-couchconfig:/opt/couchdb/etc/local.d
+#    networks:
+#      - medic-net

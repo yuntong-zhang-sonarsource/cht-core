@@ -31,7 +31,7 @@ wait_for_couchdb()
 
 is_setup_needed()
 {
-  ! is_existing_user 'medic-api'
+  ! is_existing_user 'horticulturalist'
 }
 
 is_existing_user()
@@ -39,7 +39,13 @@ is_existing_user()
   local user="$1"
   shift 1
 
-  test -f "`get_user_password_file "$user"`"
+  local userdoc=$(curl -X GET http://$COUCHDB_USER:$(cat /opt/couchdb/etc/local.d/passwd/$COUCHDB_USER)@$COUCHDB_SERVICE_NAME:5985/_users/org.couchdb.user:$user | jq '._id?')
+
+  if [ "$userdoc" = \"org.couchdb.user:horticulturalist\" ]; then
+    return 0
+  else
+    return 1
+  fi
 }
 
 get_couchdb_url()
@@ -125,43 +131,12 @@ create_couchdb_admin()
   local passwd="$2"
   shift 2
 
-  # Refuse to overwrite password
-  #if is_existing_user "$user"; then
-  #  return 1
-  #fi
-
-  # Target file for new password
-  #local passwd_file="`get_password_directory`/$user"
-
-  #if [ ! -z "$passwd" ]; then
-    # Password specified on command line
-  #  write_password "$passwd" "$passwd_file"
-  #else
-    # Password randomly generated
-  #  generate_random_password "$passwd_file"
-  #fi
-
-  #if [ "$?" -ne 0 ]; then
-  #  return 2
-  #fi
-
   # Authorize if admin exists
   local should_auth=''
 
   if is_existing_user 'admin' && [ "$user" != 'admin' ]; then
     should_auth='t'
   fi
-
-  # Create administrative account
-  #chmod 0400 "$passwd_file" &&
-  #local config_url="`get_couchdb_config_url`" &&
-  #create_couchdb_put "$should_auth" "$passwd_file" 't' \
-  #  | curl -K- -sfX PUT "http://$COUCHDB_USER:$COUCHDB_PASSWORD@$COUCHDB_SERVICE_NAME:5985/_node/couchdb@127.0.0.1/_config/admins/$user" >/dev/null
-  #curl -sX PUT http://$COUCHDB_USER:$COUCHDB_PASSWORD@$COUCHDB_SERVICE_NAME:5985/_node/couchdb@127.0.0.1/_config/admins/$user -d '"$(cat /opt/couchdb/etc/local.d/passwd/$user)"'
-
-  #if [ ${PIPESTATUS[1]} -ne 0 ]; then
-  #  return 127
-  #fi
 
   # Create user document for administrator
   local url="`get_couchdb_url`" &&
@@ -197,11 +172,6 @@ _perform_couchdb_lockdown()
 
 perform_couchdb_lockdown()
 {
- # if [ "`get_couchdb_major_version`" -gt 1 ]; then
- #   _perform_couchdb_lockdown 'chttpd' || return "$?"
- # fi
-  #_perform_couchdb_lockdown 'chttpd' || return "$?"
-  #_perform_couchdb_lockdown 'couch_httpd_auth' || return "$?"
   curl -X PUT http://$COUCHDB_USER:$COUCHDB_PASSWORD@$COUCHDB_SERVICE_NAME:5985/_node/couchdb@127.0.0.1/_config/chttpd/require_valid_user -d '"true"'
 }
 
@@ -254,15 +224,16 @@ postinstall()
   info 'CouchDB first run setup successful'
 }
 
-# below needs to be changed to check for user docs and create if not present
-#if is_setup_needed; then
-#    info 'Running CouchDB Setup'
-#    postinstall "$@"
-#fi
-info 'Running CouchDB Setup'
-postinstall "$@"
+if is_setup_needed; then
+    info 'Running CouchDB Setup'
+    postinstall "$@"
+fi
 
 export COUCH_URL=http://medic-api:$(cat /opt/couchdb/etc/local.d/passwd/medic-api)@$COUCHDB_SERVICE_NAME:5985/medic
 export NODE_PATH=/app/api/node_modules
+
+if [ "$HORTI_BOOTSTRAP_VERSION" ]; then
+  horti --medic-os --install=$HORTI_BOOTSTRAP_VERSION --no-daemon
+fi
 
 node /app/api/server.js

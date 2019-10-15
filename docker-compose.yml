@@ -1,5 +1,23 @@
 version: '3.7'
 
+## Process
+## CouchDB has custom image with our settings and entrypoint script that creates all users for our services.
+## We save the password infomration in a shared volume to other services to allow our user to be abstracted from managing pw's.
+## Can not curl pw to couchdb on admin user creation as it is plaintext. Medic-Hosted will require environment variables instead of shared data volume across services.
+## medic-hosted will require couchdb to boot first, and then SRE to grab pw's and place them as env vars for other containers.
+### This allows medic-hosted to only have 1 persistent EBS volume for couchdb, which can be on an isolated node. We can eventually get to replica's from there.
+
+## Once couchdb boots up configures to our settings, medic-api container boots. Entrypoint script locks down couchdb, creates user docs, then uses horti to install a version.
+## Once medic-api is up, medic-sentinel boots.
+## Haproxy & Nginx are easy additions between medic-api and couchdb bootup.
+
+## Usage
+## export COUCHDB_USER=admin && export COUCHDB_PASSWORD=admin123
+## docker-compose up 
+## cntrl+c to exit
+## docker-compose down
+## docker-compose volume rm medic_medic-data && medic_medic-couchconfig
+
 services:
   couchdb:
     container_name: medic-couchdb
@@ -16,28 +34,20 @@ services:
 
   medic-api:
     container_name: medic-api
-    image: medicmobile/medic-api:3.6.1-test27
+    image: medicmobile/medic-api:3.6.1-test31
     environment:
       COUCHDB_SERVICE_NAME: couchdb
-      DOCKER_COUCHDB_ADMIN_PASSWORD: ${DOCKER_COUCHDB_ADMIN_PASSWORD}
+      #DOCKER_COUCHDB_ADMIN_PASSWORD: ${DOCKER_COUCHDB_ADMIN_PASSWORD}
       COUCH_NODE_NAME: "couchdb@127.0.0.1"
       COUCHDB_USER: ${COUCHDB_USER}
       COUCHDB_PASSWORD: ${COUCHDB_PASSWORD}
+      HORTI_BOOTSTRAP_VERSION: 3.6.1
     volumes:
       - medic-couchconfig:/opt/couchdb/etc/local.d
     networks:
       - medic-net
     depends_on:
       - couchdb
-
-# medic-api launches with postinstall script that sets up db's, users.
-
-volumes:
-  medic-data:
-  medic-couchconfig:
-
-networks:
-  medic-net:
 
 #  medic-sentinel:
 #    container_name: medic-sentinel
@@ -49,3 +59,24 @@ networks:
 #      - medic-couchconfig:/opt/couchdb/etc/local.d
 #    networks:
 #      - medic-net
+
+#  haproxy:
+#    container_name: haproxy
+#    image: medicmobile/haproxy:rc.16
+#    environment:
+#      HA_PASSWORD:
+#      COUCH_SERVICE:
+#    networks:
+#      - medic-net
+#    depends_on:
+#      -couchdb
+
+#  nginx:
+
+
+volumes:
+  medic-data:
+  medic-couchconfig:
+
+networks:
+  medic-net:

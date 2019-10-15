@@ -9,7 +9,8 @@ RUN apk add --update --no-cache \
   libxslt \
   openssl \
   git \
-  bash
+  bash \ 
+  jq
 
 WORKDIR /app
 
@@ -17,6 +18,8 @@ COPY ./shared-libs ./shared-libs
 COPY ./api ./api
 
 RUN cd api && npm install --global
+
+RUN npm install -g horticulturalist
 
 EXPOSE 5988
 

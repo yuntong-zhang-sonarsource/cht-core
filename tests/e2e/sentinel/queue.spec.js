@@ -67,7 +67,6 @@ describe('Sentinel queue drain', () => {
   });
   afterEach(done => utils.revertDb(contacts.map(c => c._id), true).then(done));
 
-
   it('should drain queue, processing every doc', () => {
     const settings = {
       transitions: {

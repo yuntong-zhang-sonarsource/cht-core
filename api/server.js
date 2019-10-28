@@ -1,5 +1,5 @@
 const environment = require('./src/environment');
-const serverChecks = require('@medic/server-checks');
+const serverChecks = require('/app/shared-libs/server-checks');
 const logger = require('./src/logger');
 
 process

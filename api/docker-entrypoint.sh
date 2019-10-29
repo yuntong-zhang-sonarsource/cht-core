@@ -229,7 +229,7 @@ if is_setup_needed; then
     postinstall "$@"
 fi
 
-export COUCH_URL=http://medic-api:$(cat /opt/couchdb/etc/local.d/passwd/medic-api)@$COUCHDB_SERVICE_NAME:5985/medic
+export COUCH_URL=http://medic-api:$(cat /opt/couchdb/etc/local.d/passwd/medic-api)@haproxy:5984/medic
 export NODE_PATH=/app/api/node_modules
 
 if [ "$HORTI_BOOTSTRAP_VERSION" ]; then

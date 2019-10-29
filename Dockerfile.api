@@ -17,7 +17,7 @@ WORKDIR /app
 COPY ./shared-libs ./shared-libs
 COPY ./api ./api
 
-RUN cd api && npm install --global
+RUN cd api && npm install --verbose --global
 
 RUN npm install -g horticulturalist
 

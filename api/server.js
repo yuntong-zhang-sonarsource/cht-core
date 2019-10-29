@@ -1,5 +1,6 @@
+require('module-alias/register')
 const environment = require('./src/environment');
-const serverChecks = require('/app/shared-libs/server-checks');
+const serverChecks = require('@medic/server-checks');
 const logger = require('./src/logger');
 
 process

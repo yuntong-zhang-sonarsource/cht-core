@@ -7,8 +7,8 @@ const logger = require('./logger');
 const resourceExtraction = require('./resource-extraction');
 const settingsService = require('./services/settings');
 const translations = require('./translations');
-const translationUtils = require('/app/shared-libs/translation-utils');
-const viewMapUtils = require('/app/shared-libs/view-map-utils');
+const translationUtils = require('@medic/translation-utils');
+const viewMapUtils = require('@medic/view-map-utils');
 
 const translationCache = {};
 let settings = {};
@@ -64,7 +64,7 @@ const loadSettings = () => {
 };
 
 const initTransitionLib = () => {
-  transitionsLib = require('/app/shared-libs/transitions')(db, settings, translationCache, logger);
+  transitionsLib = require('@medic/transitions')(db, settings, translationCache, logger);
   // loadTransitions could throw errors when some transitions are misconfigured
   try {
     transitionsLib.loadTransitions(true);

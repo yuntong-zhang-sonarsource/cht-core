@@ -33,7 +33,7 @@ services:
       COUCH_NODE_NAME: "couchdb@127.0.0.1"
       COUCHDB_USER: ${COUCHDB_USER}
       COUCHDB_PASSWORD: ${COUCHDB_PASSWORD}
-      #HORTI_BOOTSTRAP_VERSION: 3.7.0
+      HORTI_BOOTSTRAP_VERSION: 3.7.0
       NODE_ENV: production
     volumes:
       - medic-couchconfig:/opt/couchdb/etc/local.d

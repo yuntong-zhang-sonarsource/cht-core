@@ -48,7 +48,7 @@ const _ = require('underscore'),
   app = express();
 
 // requires content-type application/json header
-var jsonParser = bodyParser.json({ limit: '32mb' });
+var jsonParser = bodyParser.json({ limit: '64mb' });
 const jsonQueryParser = require('./middleware/query-parser').json;
 const extractedResourceDirectory = environment.getExtractedResourcesPath();
 

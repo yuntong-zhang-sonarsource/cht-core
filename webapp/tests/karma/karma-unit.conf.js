@@ -47,9 +47,9 @@ module.exports = function (config) {
     },
   });
 
-  // allow to require xml files as strings
+  /*// allow to require xml files as strings
   config.buildWebpack.webpackConfig.module.rules.push({
     test: /enketo-xml\/.*\.xml$/i,
     use: 'raw-loader',
-  });
+  });*/
 };

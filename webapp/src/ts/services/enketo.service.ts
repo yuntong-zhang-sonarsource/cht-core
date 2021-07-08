@@ -477,7 +477,7 @@ export class EnketoService {
   }
 
   renderContactForm(formContext: EnketoFormContext) {
-    return this.renderForm(formContext);
+    return this.ngZone.runOutsideAngular(() => this.renderForm(formContext));
   }
 
   private xmlToDocs(doc, formXml, record) {

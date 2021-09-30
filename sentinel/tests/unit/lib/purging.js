@@ -83,7 +83,6 @@ describe('ServerSidePurge', () => {
 
     it('should return all unique role groups', () => {
       sinon.stub(purgingUtils, 'isOffline').returns(true);
-      sinon.stub(purgingUtils, 'getRoleHash').callsFake(roles => JSON.stringify(roles));
       db.users.allDocs.resolves({ rows: [
         { id: 'user1', doc: { roles: ['a', 'b'], name: 'user1' }},
         { id: 'user2', doc: { roles: ['b', 'a'], name: 'user2' }},
@@ -98,16 +97,12 @@ describe('ServerSidePurge', () => {
       ]});
 
       return service.__get__('getRoles')().then(roles => {
-        chai.expect(Object.keys(roles)).to.deep.equal([
-          JSON.stringify(['a', 'b']),
-          JSON.stringify(['b', 'c']),
-          JSON.stringify(['a', 'c']),
-          JSON.stringify(['a', 'b', 'c']),
-        ]);
-        chai.expect(roles[JSON.stringify(['a', 'b'])]).to.deep.equal(['a', 'b']);
-        chai.expect(roles[JSON.stringify(['b', 'c'])]).to.deep.equal(['b', 'c']);
-        chai.expect(roles[JSON.stringify(['a', 'c'])]).to.deep.equal(['a', 'c']);
-        chai.expect(roles[JSON.stringify(['a', 'b', 'c'])]).to.deep.equal(['a', 'b', 'c']);
+        chai.expect(roles).to.deep.equal({
+          '0c627024abe16a195dfc590702fa464e': [ 'b', 'c' ],
+          'ae63a1065c610a187eb76bead73c4c40': [ 'a', 'c' ],
+          'c29a5747d698b2f95cdfd5ed6502f19d': [ 'a', 'b', 'c' ],
+          'e53f04d1bcc1428d9e8db9a93578c5eb': [ 'a', 'b' ],
+        });
       });
     });
   });
@@ -1623,15 +1618,20 @@ describe('ServerSidePurge', () => {
       return service.__get__('batchedUnallocatedPurge')(roles, purgeFn).then(() => {
         chai.expect(request.get.callCount).to.equal(2);
         chai.expect(purgeFn.callCount).to.equal(12);
-        chai.expect(purgeFn.args[0]).to.deep.equal([{ roles: roles['a'] }, {}, [{ _id: 'r1', form: 'a' }], []]);
-        chai.expect(purgeFn.args[1]).to.deep.equal([{ roles: roles['b'] }, {}, [{ _id: 'r1', form: 'a' }], []]);
-        chai.expect(purgeFn.args[2]).to.deep.equal([{ roles: roles['a'] }, {}, [{ _id: 'r2', form: 'a' }], []]);
-        chai.expect(purgeFn.args[3]).to.deep.equal([{ roles: roles['b'] }, {}, [{ _id: 'r2', form: 'a' }], []]);
-        chai.expect(purgeFn.args[4]).to.deep.equal([{ roles: roles['a'] }, {}, [], [{ _id: 'r3' }]]);
-        chai.expect(purgeFn.args[5]).to.deep.equal([{ roles: roles['b'] }, {}, [], [{ _id: 'r3' }]]);
-        chai.expect(purgeFn.args[6]).to.deep.equal([{ roles: roles['a'] }, {}, [{ _id: 'r4', form: 'a' }], []]);
-        chai.expect(purgeFn.args[8]).to.deep.equal([{ roles: roles['a'] }, {}, [], [{ _id: 'r5' }]]);
-        chai.expect(purgeFn.args[10]).to.deep.equal([{ roles: roles['a'] }, {}, [{ _id: 'r6', form: 'a' }], []]);
+        chai.expect(purgeFn.args).to.have.deep.members([
+          [{ roles: roles['a'] }, {}, [{ _id: 'r1', form: 'a' }], []],
+          [{ roles: roles['a'] }, {}, [{ _id: 'r2', form: 'a' }], []],
+          [{ roles: roles['a'] }, {}, [], [{ _id: 'r3' }]],
+          [{ roles: roles['a'] }, {}, [{ _id: 'r4', form: 'a' }], []],
+          [{ roles: roles['a'] }, {}, [], [{ _id: 'r5' }]],
+          [{ roles: roles['a'] }, {}, [{ _id: 'r6', form: 'a' }], []],
+          [{ roles: roles['b'] }, {}, [{ _id: 'r1', form: 'a' }], []],
+          [{ roles: roles['b'] }, {}, [{ _id: 'r2', form: 'a' }], []],
+          [{ roles: roles['b'] }, {}, [], [{ _id: 'r3' }]],
+          [{ roles: roles['b'] }, {}, [{ _id: 'r4', form: 'a' }], []],
+          [{ roles: roles['b'] }, {}, [], [{ _id: 'r5' }]],
+          [{ roles: roles['b'] }, {}, [{ _id: 'r6', form: 'a' }], []],
+        ]);
       });
     });
 

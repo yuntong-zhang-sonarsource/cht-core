@@ -29,7 +29,7 @@ case $TEST_MODE in
 
 CLUSTERED)
 check_if_couchdb_cluster_is_ready
-/app/tests/bats/bin/bats /app/tests/test.bats
+/app/tests/bats/bin/bats /app/tests/tests.bats
 ;;
 
 *)

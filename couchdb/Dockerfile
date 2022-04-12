@@ -27,7 +27,7 @@ COPY ./tests/ /app/tests/
 COPY set-up-cluster.sh /app/set-up-cluster.sh
 RUN chmod +x /app/tests/tests.sh
 RUN chmod +x set-up-cluster.sh
-ENTRYPOINT [ "/bin/bash", "/app/tests.sh" ]
+ENTRYPOINT [ "/bin/bash", "/app/tests/tests.sh" ]
 
 # Final
 FROM base_couchdb_build AS cht-couchdb

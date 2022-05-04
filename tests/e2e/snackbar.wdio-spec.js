@@ -31,19 +31,17 @@ describe('Syncing snackbar', () => {
   it('should display the snackbar with the syncing messages and then hide it', async () => {
     await commonPage.openHamburgerMenu();
     await (await commonPage.syncButton()).click();
-    const snack = await commonPage.snackbar();
-    await snack.waitForDisplayed();
+
     await browser.waitUntil(async () => await commonPage.snackbarMessage() === 'Currently syncing…');
     await browser.waitUntil(async () => await commonPage.snackbarMessage() === 'All reports synced');
-    await browser.waitUntil(async () => await snack.isDisplayedInViewport() === false);
+    await browser.waitUntil(async () => await (await commonPage.snackbar()).isDisplayedInViewport() === false);
   });
 
   it('should display the snackbar with a clickable action', async () => {
     await browser.throttle('offline');
     await commonPage.openHamburgerMenu();
     await (await commonPage.syncButton()).click();
-    const snack = await commonPage.snackbar();
-    await snack.waitForDisplayed();
+
     await browser.waitUntil(async () => await commonPage.snackbarMessage() === 'Currently syncing…');
     await browser.waitUntil(async () => await commonPage.snackbarMessage() === 'Sync failed. Unable to connect.');
 

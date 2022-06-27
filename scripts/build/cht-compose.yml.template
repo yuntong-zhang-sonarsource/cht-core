@@ -80,7 +80,7 @@ services:
     ports:
       - "${API_PORT:-5988}:5988"
     environment:
-      - COUCH_URL=http://${COUCHDB_USER:-admin}:${COUCHDB_PASSWORD:-pass}@couchdb.1:5984/{{ db_name }}
+      - COUCH_URL=http://${COUCHDB_USER:-admin}:${COUCHDB_PASSWORD:-pass}@haproxy:5984/{{ db_name }}
       - BUILDS_URL=${MARKET_URL_READ:-https://staging.dev.medicmobile.org}/${BUILDS_SERVER:-_couch/builds}
       - UPGRADE_SERVICE_URL=${UPGRADE_SERVICE_URL:-http://localhost:5100}
     networks:
@@ -90,7 +90,7 @@ services:
     image: {{{ repo }}}/cht-sentinel:{{ tag }}
     container_name: {{ sentinel_container_name }}
     environment:
-      - COUCH_URL=http://${COUCHDB_USER:-admin}:${COUCHDB_PASSWORD:-pass}@couchdb.1:5984/{{ db_name }}
+      - COUCH_URL=http://${COUCHDB_USER:-admin}:${COUCHDB_PASSWORD:-pass}@haproxy:5984/{{ db_name }}
       - API_HOST=cht-api
     networks:
       - {{ network }}

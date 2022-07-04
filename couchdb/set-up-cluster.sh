@@ -34,12 +34,12 @@ join_node_to_cluster(){
 
 complete_cluster_setup()
 {
-    if $(verify_membership); then
-      echo "Cluster Setup Already Finished"
-    else
-      curl -X POST -H "Content-Type: application/json" http://$COUCHDB_USER:$COUCHDB_PASSWORD@$SVC_NAME:5984/_cluster_setup \
-      -d '{"action": "finish_cluster"}'
-    fi
+    #if $(verify_membership); then
+    #  echo "Cluster Setup Already Finished"
+    #else
+    curl -X POST -H "Content-Type: application/json" http://$COUCHDB_USER:$COUCHDB_PASSWORD@$SVC_NAME:5984/_cluster_setup \
+    -d '{"action": "finish_cluster"}'
+    #fi
 }
 
 check_cluster_membership(){

@@ -52,8 +52,7 @@ if [ "$1" = '/opt/couchdb/bin/couchdb' ]; then
     # Ensure that CouchDB will write custom settings in this file
     touch $CLUSTER_CREDENTIALS
 
-    if [ "$COUCHDB_USER" ] && [ "$COUCHDB_PASSWORD" ]; then
-        #&& [ -z "$COUCHDB_SYNC_ADMINS_NODE" ]; then
+    if [ "$COUCHDB_USER" ] && [ "$COUCHDB_PASSWORD" ] && [ -z "$COUCHDB_SYNC_ADMINS_NODE" ]; then
         # Create admin only if not already present
         if ! grep -Pzoqr "\[admins\]\n$COUCHDB_USER =" /opt/couchdb/etc/local.d/*.ini; then
             printf "\n[admins]\n%s = %s\n" "$COUCHDB_USER" "$COUCHDB_PASSWORD" >> $CLUSTER_CREDENTIALS

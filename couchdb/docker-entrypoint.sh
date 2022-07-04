@@ -52,7 +52,8 @@ if [ "$1" = '/opt/couchdb/bin/couchdb' ]; then
     # Ensure that CouchDB will write custom settings in this file
     touch $CLUSTER_CREDENTIALS
 
-    if [ "$COUCHDB_USER" ] && [ "$COUCHDB_PASSWORD" ] && [ -z "$COUCHDB_SYNC_ADMINS_NODE" ]; then
+    if [ "$COUCHDB_USER" ] && [ "$COUCHDB_PASSWORD" ]; then
+        #&& [ -z "$COUCHDB_SYNC_ADMINS_NODE" ]; then
         # Create admin only if not already present
         if ! grep -Pzoqr "\[admins\]\n$COUCHDB_USER =" /opt/couchdb/etc/local.d/*.ini; then
             printf "\n[admins]\n%s = %s\n" "$COUCHDB_USER" "$COUCHDB_PASSWORD" >> $CLUSTER_CREDENTIALS
@@ -62,8 +63,8 @@ if [ "$1" = '/opt/couchdb/bin/couchdb' ]; then
 
     if [ "$COUCHDB_SECRET" ]; then
         # Set secret only if not already present
-        if ! grep -Pzoqr "\[couch_httpd_auth\]\nsecret =" /opt/couchdb/etc/local.d/*.ini; then
-            printf "\n[couch_httpd_auth]\nsecret = %s\n" "$COUCHDB_SECRET" >> $CLUSTER_CREDENTIALS
+        if ! grep -Pzoqr "\[chttpd_auth\]\nsecret =" /opt/couchdb/etc/local.d/*.ini; then
+            printf "\n[chttpd_auth]\nsecret = %s\n" "$COUCHDB_SECRET" >> $CLUSTER_CREDENTIALS
         fi
     fi
 
@@ -95,7 +96,7 @@ if [ "$1" = '/opt/couchdb/bin/couchdb' ]; then
         # hashed password across all nodes so that session cookies can be reused.
         /bin/bash /opt/couchdb/etc/set-up-cluster.sh check_if_couchdb_is_ready http://$COUCHDB_USER:$COUCHDB_PASSWORD@$COUCHDB_SYNC_ADMINS_NODE:5984
         COUCHDB_HASHED_PASSWORD=`curl http://$COUCHDB_USER:$COUCHDB_PASSWORD@$COUCHDB_SYNC_ADMINS_NODE:5984/_node/couchdb@$COUCHDB_SYNC_ADMINS_NODE/_config/admins/$COUCHDB_USER | sed "s/^\([\"]\)\(.*\)\1\$/\2/g"`
-
+     
         if ! grep -Pzoqr "$COUCHDB_USER = $COUCHDB_HASHED_PASSWORD" /opt/couchdb/etc/local.d/*.ini; then
             printf "[admins]\n%s = %s\n" "$COUCHDB_USER" "$COUCHDB_HASHED_PASSWORD" >> $CLUSTER_CREDENTIALS
         fi

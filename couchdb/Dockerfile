@@ -1,4 +1,6 @@
-FROM couchdb:2.3.1 as base_couchdb_build
+FROM couchdb:3.2.2 as base_couchdb_build
+
+RUN apt-get update && apt-get install -y jq
 
 # Add configuration
 COPY --chown=couchdb:couchdb 10-docker-default.ini /opt/couchdb/etc/default.d/

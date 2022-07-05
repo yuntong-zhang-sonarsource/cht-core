@@ -39,6 +39,8 @@ complete_cluster_setup()
     #else
     curl -X POST -H "Content-Type: application/json" http://$COUCHDB_USER:$COUCHDB_PASSWORD@$SVC_NAME:5984/_cluster_setup \
     -d '{"action": "finish_cluster"}'
+
+    curl -sX PUT http://$COUCHDB_USER:$COUCHDB_PASSWORD@$SVC_NAME:5984/_global_changes
     #fi
 }
 

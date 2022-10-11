@@ -94,6 +94,7 @@ services:
       - "ORGANISATION=${ORGANISATION:-medic}"
       - "DEPARTMENT=${DEPARTMENT:-Information_Security}"
       - "API_ADDR=${API_ADDR:-cht-api}"
+      - "NGINX_ENVSUBST_OUTPUT_DIR=${NGINX_ENVSUBST_OUTPUT_DIR:-/etc/nginx}"
     logging:
       driver: "local"
       options:

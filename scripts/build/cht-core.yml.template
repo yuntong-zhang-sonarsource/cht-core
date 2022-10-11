@@ -93,6 +93,7 @@ services:
       - "LOCALITY=${LOCALITY:-San_Francisco}"
       - "ORGANISATION=${ORGANISATION:-medic}"
       - "DEPARTMENT=${DEPARTMENT:-Information_Security}"
+      - "API_ADDR=${API_ADDR:-cht-api}"
     logging:
       driver: "local"
       options:

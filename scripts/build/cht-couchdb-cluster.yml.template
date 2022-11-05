@@ -5,7 +5,7 @@ services:
     image: {{{ repo }}}/cht-couchdb:{{ tag }}
     volumes:
       - ${DB1_DATA:-./srv1}:/opt/couchdb/data
-      - cht-credentials:/opt/couchdb/etc/local.d/
+      - cht-credentials-couchdb1:/opt/couchdb/etc/local.d/
     environment:
       - "COUCHDB_USER=${COUCHDB_USER:-admin}"
       - "COUCHDB_PASSWORD=${COUCHDB_PASSWORD:?COUCHDB_PASSWORD must be set}"
@@ -27,6 +27,7 @@ services:
     image: {{{ repo }}}/cht-couchdb:{{ tag }}
     volumes:
       - ${DB2_DATA:-./srv2}:/opt/couchdb/data
+      - cht-credentials-couchdb2:/opt/couchdb/etc/local.d/
     environment:
       - "COUCHDB_USER=${COUCHDB_USER:-admin}"
       - "COUCHDB_PASSWORD=${COUCHDB_PASSWORD:?COUCHDB_PASSWORD must be set}"
@@ -48,6 +49,7 @@ services:
     image: {{{ repo }}}/cht-couchdb:{{ tag }}
     volumes:
       - ${DB3_DATA:-./srv3}:/opt/couchdb/data
+      - cht-credentials-couchdb3:/opt/couchdb/etc/local.d/
     environment:
       - "COUCHDB_USER=${COUCHDB_USER:-admin}"
       - "COUCHDB_PASSWORD=${COUCHDB_PASSWORD:?COUCHDB_PASSWORD must be set}"
@@ -66,7 +68,9 @@ services:
       cht-net:
 
 volumes:
-  cht-credentials:
+  cht-credentials-couchdb1:
+  cht-credentials-couchdb2:
+  cht-credentials-couchdb3:
 
 networks:
   cht-net:

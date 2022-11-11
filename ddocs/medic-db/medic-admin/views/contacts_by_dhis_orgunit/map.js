@@ -1,4 +1,5 @@
 function(doc) {
+  // random update
   if (
     doc.dhis &&
     ['contact', 'person', 'clinic', 'health_center', 'district_hospital'].indexOf(doc.type) !== -1

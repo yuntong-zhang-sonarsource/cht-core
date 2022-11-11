@@ -1,5 +1,6 @@
 // Mostly used for exporting records
 function(doc) {
+  // comment
   if (doc.type === 'data_record') {
     var valid = !doc.errors || doc.errors.length === 0;
     var form = doc.form;

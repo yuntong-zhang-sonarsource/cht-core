@@ -33,6 +33,7 @@ function(doc) {
     var subject = {};
     var reference = doc.patient_id ||
                     (doc.fields && doc.fields.patient_id) ||
+                    (doc.fields && doc.fields.patient_uuid) ||
                     doc.place_id ||
                     (doc.fields && doc.fields.place_id);
 

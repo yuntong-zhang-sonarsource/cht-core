@@ -1,4 +1,5 @@
 function (doc) {
+  // comment
   var _emit = function(tasks) {
     tasks.forEach(function(task) {
       if (!task.messages || !task.gateway_ref) {

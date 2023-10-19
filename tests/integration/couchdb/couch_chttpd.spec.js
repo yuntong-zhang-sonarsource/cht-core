@@ -72,5 +72,16 @@ describe('accessing couch clustering endpoint', () => {
     const metadata = logs[0];
     expectCorrectMetadata(metadata);
   });
+
+  it('should check cluster state', async () => {
+    const r = await utils.request({ path: `/_cluster_setup` });
+    console.log(r);
+
+    await utils.stopCouch();
+    await utils.startCouch();
+
+    const s = await utils.request({ path: `/_cluster_setup` });
+    console.log(s);
+  });
 });
 

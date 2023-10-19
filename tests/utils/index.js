@@ -783,6 +783,14 @@ const startApi = async (listen = true) => {
   listen && await listenForApi();
 };
 
+const stopCouch = async () => {
+  await stopService('couchdb-1.local');
+};
+const startCouch = async () => {
+  await startService('couchdb-1.local');
+  await listenForApi();
+};
+
 const stopHaproxy = () => stopService('haproxy');
 
 const startHaproxy = () => startService('haproxy');
@@ -989,7 +997,7 @@ const prepServices = async (defaultSettings) => {
 
   updateContainerNames();
 
-  await tearDownServices();
+  await tearDownServices(true);
   await startServices();
   await listenForApi();
   if (defaultSettings) {
@@ -1044,10 +1052,10 @@ const saveLogs = async () => {
   }
 };
 
-const tearDownServices = async () => {
+const tearDownServices = async (DEBUG) => {
   await saveLogs();
-  if (!DEBUG) {
-    await dockerComposeCmd('down', '-t', '0', '--remove-orphans', '--volumes', '--rmi');
+  if (DEBUG) {
+    await dockerComposeCmd('down', '-t', '0', '--remove-orphans', '--volumes');
   }
 };
 
@@ -1293,4 +1301,6 @@ module.exports = {
   updateContainerNames,
   updatePermissions,
   formDocProcessing,
+  stopCouch,
+  startCouch,
 };

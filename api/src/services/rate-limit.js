@@ -1,5 +1,6 @@
 const { RateLimiterMemory } = require('rate-limiter-flexible');
 const auth = require('../auth');
+const logger = require('../logger');
 
 const failedLoginLimit = new RateLimiterMemory({
   keyPrefix: 'failed-login',
@@ -44,14 +45,14 @@ module.exports = {
     const keys = getKeys(req);
     for (const key of keys) {
       if (await isLimitedKey(key)) {
-        console.warn('request limited on', key);
+        logger.warn('request limited on', key);
         return true;
       }
     }
     return false;
   },
   consume: async req => {
-    console.warn('consuming', req.url);
+    logger.warn('consuming', req.url);
     const keys = getKeys(req);
     for (const key of keys) {
       await consumeKey(key);

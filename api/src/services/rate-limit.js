@@ -45,14 +45,14 @@ module.exports = {
     const keys = getKeys(req);
     for (const key of keys) {
       if (await isLimitedKey(key)) {
-        logger.warn('request limited on', key);
+        logger.warn(`request limited on ${key}`);
         return true;
       }
     }
     return false;
   },
   consume: async req => {
-    logger.warn('consuming', req.url);
+    logger.warn(`consuming ${req.url} ${req.id}`);
     const keys = getKeys(req);
     for (const key of keys) {
       await consumeKey(key);

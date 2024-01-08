@@ -218,7 +218,7 @@ describe('Settings API', () => {
           });
         })
         .then(response => {
-          chai.expect(response._test_sandbox).to.deep.equal({ times: 'three', b: 'c' });
+          chai.expect(response._test_sandbox).to.deep.equal({ times: 'three', b: 'c', test: 1 });
         });
     });
 

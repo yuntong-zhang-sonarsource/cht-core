@@ -37,5 +37,8 @@ describe('logging in through API directly', () => {
 
     expect(logs).to.include('HTTP/1.1 400 Bad Request');
     expect(logs).to.include('Connection: keep-alive');
+
+    expect(logs).to.not.include('Set-Cookie: AuthSession=');
+    expect(logs).to.not.include('Set-Cookie: userCtx=');
   });
 });

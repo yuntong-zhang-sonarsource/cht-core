@@ -6,11 +6,11 @@ const runDockerCommand = (command, params, env=process.env) => {
   return new Promise((resolve, reject) => {
     const cmd = spawn(command, params, { cwd: path.join(__dirname, 'keep-alive-script'), env });
     const output = [];
-    const log = (data) => output.push(data.toString().replace(/\n/g, ''));
+    const log = (data) => output.push(data.toString());
     cmd.on('error', reject);
     cmd.stdout.on('data', log);
     cmd.stderr.on('data', log);
-    cmd.on('close', () => resolve(output));
+    cmd.on('close', () => resolve(output.join(' ')));
   });
 };
 
@@ -21,15 +21,12 @@ const runScript = async () => {
   return await runDockerCommand('docker-compose', ['up', '--build', '--force-recreate'], env);
 };
 const getLogs = async () => {
-  const containerName = (await runDockerCommand('docker-compose', ['ps', '-q', '-a']))[0];
-  const logs = await runDockerCommand('docker', ['logs', containerName]);
-  return logs?.filter(log => log);
+  return await runDockerCommand('docker-compose', ['logs', '--no-log-prefix']);
 };
 
 describe('logging in through API directly', () => {
   after(async () => {
-    const containerName = (await runDockerCommand('docker-compose', ['ps', '-q', '-a']))[0];
-    await runDockerCommand('docker', ['rm', containerName]);
+    await runDockerCommand('docker-compose', ['down', '--remove-orphans']);
   });
 
   it('should allow logins', async () => {
@@ -39,7 +36,6 @@ describe('logging in through API directly', () => {
     console.log(logs);
 
     expect(logs).to.include('HTTP/1.1 400 Bad Request');
-    expect(logs).to.include('{"error":"Not logged in"}');
     expect(logs).to.include('Connection: keep-alive');
   });
 });

@@ -1,10 +1,8 @@
-FROM alpine:3.19 AS base_build
+FROM alpine:3.19
 
-RUN apk add --update --no-cache \
-  build-base \
-  curl
+RUN apk add --update --no-cache curl
 
 COPY cmd.sh /
 RUN chmod +x /cmd.sh
 
-ENTRYPOINT ["/cmd.sh"]
+CMD ["/cmd.sh"]

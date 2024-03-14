@@ -18,7 +18,7 @@ const runScript = async () => {
   const env = { ...process.env };
   env.USER = constants.USERNAME;
   env.PASSWORD = constants.PASSWORD;
-  return await runDockerCommand('docker-compose', ['up', '--build', '--force-recreate', ' --no-cache'], env);
+  return await runDockerCommand('docker-compose', ['up', '--build', '--force-recreate'], env);
 };
 const getLogs = async () => {
   const containerName = (await runDockerCommand('docker-compose', ['ps', '-q', '-a']))[0];
@@ -27,10 +27,19 @@ const getLogs = async () => {
 };
 
 describe('logging in through API directly', () => {
+  after(async () => {
+    const containerName = (await runDockerCommand('docker-compose', ['ps', '-q', '-a']))[0];
+    await runDockerCommand('docker', ['rm', containerName]);
+  });
+
   it('should allow logins', async () => {
     await runScript();
     const logs = await getLogs();
 
     console.log(logs);
+
+    expect(logs).to.include('HTTP/1.1 400 Bad Request');
+    expect(logs).to.include('{"error":"Not logged in"}');
+    expect(logs).to.include('Connection: keep-alive');
   });
 });

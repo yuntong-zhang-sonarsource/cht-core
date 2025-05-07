@@ -62,10 +62,18 @@ const encrypt = (text) => {
     .then(key => {
       const iv = crypto.randomBytes(IV_LENGTH);
       const cipher = crypto.createCipheriv(CRYPTO_ALGO, key, iv);
-      const start = cipher.update(text);
+      const start = cipher.update(text, 'utf8');
       const end = cipher.final();
       const encrypted = Buffer.concat([ start, end ]);
-      return iv.toString('hex') + ':' + encrypted.toString('hex');
+      const authTag = cipher.getAuthTag();
+      // Output: iv:authTag:ciphertext (all hex)
+      return (
+        iv.toString('hex') +
+        ':' +
+        authTag.toString('hex') +
+        ':' +
+        encrypted.toString('hex')
+      );
     });
 };
 
@@ -73,9 +81,14 @@ const decrypt = (text) => {
   return getKey()
     .then(key => {
       const parts = text.split(':');
+      if (parts.length < 3) {
+        throw new Error('Invalid encrypted data format.');
+      }
       const iv = Buffer.from(parts.shift(), 'hex');
+      const authTag = Buffer.from(parts.shift(), 'hex');
       const encryptedText = Buffer.from(parts.join(':'), 'hex');
       const decipher = crypto.createDecipheriv(CRYPTO_ALGO, key, iv);
+      decipher.setAuthTag(authTag);
       const start = decipher.update(encryptedText);
       const final = decipher.final();
       return Buffer.concat([ start, final ]).toString();
